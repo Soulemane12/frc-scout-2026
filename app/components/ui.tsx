@@ -194,7 +194,7 @@ export function ChoiceGroup({
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => onChange(opt.value)}
+                onClick={() => onChange(selected ? "" : opt.value)}
                 className={cn(
                   "flex flex-col items-start rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all",
                   selected
