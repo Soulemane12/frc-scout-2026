@@ -40,7 +40,7 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
 
         {/* Stats */}
         <div className="flex items-center gap-2 text-xs text-slate-500 flex-shrink-0">
-          <span className="font-medium text-slate-700">{fuel} fuel</span>
+          <span className="font-medium text-slate-700">{fuel} fuel (yellow ball)</span>
           <span
             className={cn(
               "rounded-full px-2 py-0.5 font-semibold",
@@ -67,12 +67,12 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
               ["Scouter", e.scouter || "—"],
               ["Starting pos.", e.startingPosition || "—"],
               ["Preloaded", e.preloaded || "—"],
-              ["Auto fuel", e.autoFuelScored],
+              ["Auto fuel (yellow ball)", e.autoFuelScored],
               ["Mobility", e.autoMobility || "—"],
               ["Auto climb", e.autoClimb || "—"],
               ["Cycles", e.cycles],
-              ["Fuel / cycle", e.yellowPerCycle],
-              ["Teleop fuel est.", e.cycles * e.yellowPerCycle],
+              ["Fuel (yellow ball) / cycle", e.yellowPerCycle],
+              ["Teleop fuel (yellow ball) est.", e.cycles * e.yellowPerCycle],
               ["Inactive behavior", e.inactiveHubBehavior || "—"],
               ["Endgame climb", CLIMB_LABEL[e.teleopClimb] ?? "—"],
               ["Stayed on", e.stayOn || "—"],

@@ -9,7 +9,7 @@ import { cn } from "../lib/utils";
 
 const INACTIVE_LABELS: Record<string, string> = {
   defense: "Played defense",
-  collect: "Collected fuel",
+  collect: "Collected fuel (yellow ball)",
   cross: "Crossed bump/trench",
   ferry: "Ferrying",
   wait: "Waited / nothing",
@@ -146,9 +146,9 @@ export default function AnalyticsPage() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Matches Scouted" value={n} />
-        <StatCard label="Avg Total Fuel" value={avgFuelVal.toFixed(1)} sub="auto + teleop est." accent="border-l-blue-500" />
+        <StatCard label="Avg Total Fuel (Yellow Ball)" value={avgFuelVal.toFixed(1)} sub="auto + teleop est." accent="border-l-blue-500" />
         <StatCard label="Avg Cycles" value={avgCyclesVal.toFixed(1)} />
-        <StatCard label="Avg Fuel / Cycle" value={avgFuelPerCycleVal.toFixed(1)} />
+        <StatCard label="Avg Fuel (Yellow Ball) / Cycle" value={avgFuelPerCycleVal.toFixed(1)} />
         <StatCard label="Avg Climb Pts" value={avgClimbPtsVal.toFixed(0)} accent="border-l-teal-500" />
         <StatCard label="Win Rate" value={`${winRate}%`} accent={winRate >= 50 ? "border-l-green-500" : "border-l-red-400"} />
         <StatCard label="Mobility Rate" value={`${mobilityRate}%`} />
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Teams</CardTitle>
-          <CardDescription>Ranked by average total fuel scored</CardDescription>
+          <CardDescription>Ranked by average total fuel (yellow ball) scored</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col divide-y divide-slate-100">
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
                   <span className="text-slate-400 text-xs">{row.matches} match{row.matches !== 1 ? "es" : ""}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-500">
-                  <span><span className="font-semibold text-slate-700">{row.avgFuel.toFixed(0)}</span> avg fuel</span>
+                  <span><span className="font-semibold text-slate-700">{row.avgFuel.toFixed(0)}</span> avg fuel (yellow ball)</span>
                   <span><span className="font-semibold text-slate-700">{row.avgClimb.toFixed(0)}</span> avg climb pts</span>
                 </div>
               </button>

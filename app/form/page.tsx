@@ -148,7 +148,7 @@ export default function FormPage() {
 
       <ChoiceGroup
         label="Preloaded?"
-        hint="Did the robot start the match with fuel loaded?"
+        hint="Did the robot start the match with fuel (yellow ball) loaded?"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
@@ -158,7 +158,7 @@ export default function FormPage() {
       />
 
       <Counter
-        label="Fuel Scored in Auto"
+        label="Fuel (Yellow Ball) Scored in Auto"
         hint="Count each ball that entered the hub · 1 pt each"
         value={f.autoFuelScored}
         onChange={(v) => set("autoFuelScored", v)}
@@ -197,7 +197,7 @@ export default function FormPage() {
       />
 
       <Counter
-        label="Fuel Per Cycle"
+        label="Fuel (Yellow Ball) Per Cycle"
         hint="Average balls scored per cycle"
         value={f.yellowPerCycle}
         onChange={(v) => set("yellowPerCycle", v)}
@@ -207,7 +207,7 @@ export default function FormPage() {
       {f.cycles > 0 && f.yellowPerCycle > 0 && (
         <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-5 py-3">
           <span className="text-sm text-slate-600">
-            Estimated teleop fuel:{" "}
+            Estimated teleop fuel (yellow ball):{" "}
             <span className="font-bold text-slate-900">{estimatedTeleopFuel} pts</span>
           </span>
           <div className="flex gap-2">
@@ -230,7 +230,7 @@ export default function FormPage() {
         hint="What did they do when their hub was turned off?"
         options={[
           { label: "Defense", value: "defense" },
-          { label: "Collect fuel", value: "collect" },
+          { label: "Collect fuel (yellow ball)", value: "collect" },
           { label: "Cross bump/trench", value: "cross" },
           { label: "Ferrying", value: "ferry" },
           { label: "Waited / nothing", value: "wait" },
@@ -268,7 +268,7 @@ export default function FormPage() {
 
       <ChoiceGroup
         label="HP Scored Directly into Hub?"
-        hint="Human players can throw fuel into the hub themselves"
+        hint="Human players can throw fuel (yellow ball) into the hub themselves"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
