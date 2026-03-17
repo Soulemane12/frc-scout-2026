@@ -7,12 +7,13 @@ export interface ScoutingEntry {
   allianceColor: string;
   startingPosition: string;
   preloaded: string;
-  autoFuelScored: number;
+  autoCycles: number;
+  autoYellowPerCycle: number;
   autoMobility: string;
   autoClimb: string;
   cycles: number;
   yellowPerCycle: number;
-  inactiveHubBehavior: string;
+  inactiveHubBehavior: string[];
   teleopClimb: string;
   stayOn: string;
   hpDirectScore: string;
@@ -26,7 +27,7 @@ export interface ScoutingEntry {
 }
 
 export function totalFuel(e: ScoutingEntry) {
-  return e.autoFuelScored + e.cycles * e.yellowPerCycle;
+  return e.autoCycles * e.autoYellowPerCycle + e.cycles * e.yellowPerCycle;
 }
 
 export function climbPts(e: ScoutingEntry) {

@@ -93,8 +93,9 @@ export default function AnalyticsPage() {
 
   const inactiveDist: Record<string, number> = {};
   te.forEach((e) => {
-    if (e.inactiveHubBehavior)
-      inactiveDist[e.inactiveHubBehavior] = (inactiveDist[e.inactiveHubBehavior] ?? 0) + 1;
+    (e.inactiveHubBehavior ?? []).forEach((behavior) => {
+      inactiveDist[behavior] = (inactiveDist[behavior] ?? 0) + 1;
+    });
   });
 
   const mostScouted = uniqueTeams.reduce((best, t) =>

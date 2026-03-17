@@ -221,6 +221,80 @@ export function ChoiceGroup({
   );
 }
 
+// ── MultiChoiceGroup (checkboxes, multiple selection) ────────────────────────
+
+export function MultiChoiceGroup({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+  cols = 2,
+}: {
+  label: string;
+  hint?: string;
+  options: { label: string; value: string; sub?: string }[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  cols?: number;
+}) {
+  function toggle(opt: string) {
+    if (value.includes(opt)) {
+      onChange(value.filter((v) => v !== opt));
+    } else {
+      onChange([...value, opt]);
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{label}</CardTitle>
+        {hint && <CardDescription>{hint}</CardDescription>}
+      </CardHeader>
+      <CardContent>
+        <div
+          className="grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          {options.map((opt) => {
+            const selected = value.includes(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => toggle(opt.value)}
+                className={cn(
+                  "flex flex-col items-start rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all",
+                  selected
+                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "h-3.5 w-3.5 rounded border-2 flex-shrink-0 flex items-center justify-center",
+                      selected ? "border-blue-500 bg-blue-500" : "border-slate-300"
+                    )}
+                  >
+                    {selected && (
+                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                        <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  {opt.label}
+                </div>
+                {opt.sub && <span className="mt-0.5 pl-5 text-xs text-slate-400">{opt.sub}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Counter ──────────────────────────────────────────────────────────────────
 
 export function Counter({

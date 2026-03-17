@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card, CardHeader, CardTitle, CardContent, CardDescription,
-  Button, Input, Textarea, Label, ChoiceGroup, Counter, StarRating, SectionDivider,
+  Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter, StarRating, SectionDivider,
 } from "../components/ui";
 import { loadEntries, saveEntries } from "../lib/storage";
 import type { ScoutingEntry } from "../lib/types";
@@ -16,12 +16,13 @@ const BLANK = {
   allianceColor: "",
   startingPosition: "",
   preloaded: "",
-  autoFuelScored: 0,
+  autoCycles: 0,
+  autoYellowPerCycle: 0,
   autoMobility: "",
   autoClimb: "",
   cycles: 0,
   yellowPerCycle: 0,
-  inactiveHubBehavior: "",
+  inactiveHubBehavior: [] as string[],
   teleopClimb: "",
   stayOn: "",
   hpDirectScore: "",
@@ -111,7 +112,7 @@ export default function FormPage() {
               <Label>Scouter Name</Label>
               <Input
                 type="text"
-                placeholder="Your name"
+                placeholder="First and last name"
                 value={f.scouter}
                 onChange={(e) => set("scouter", e.target.value)}
               />
@@ -158,15 +159,22 @@ export default function FormPage() {
       />
 
       <Counter
-        label="Fuel (Yellow Ball) Scored in Auto"
-        hint="Count each ball that entered the hub · 1 pt each"
-        value={f.autoFuelScored}
-        onChange={(v) => set("autoFuelScored", v)}
+        label="Cycles"
+        hint="Shoot → collect → shoot = 1 cycle"
+        value={f.autoCycles}
+        onChange={(v) => set("autoCycles", v)}
+      />
+
+      <Counter
+        label="Fuel (Yellow Ball) Per Cycle"
+        hint="Average balls scored per cycle"
+        value={f.autoYellowPerCycle}
+        onChange={(v) => set("autoYellowPerCycle", v)}
       />
 
       <ChoiceGroup
         label="Crossed Bump / Trench?"
-        hint="Mobility — did the robot leave its starting zone?"
+        hint="Does it go to the neutral zone?"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
@@ -225,9 +233,9 @@ export default function FormPage() {
         </div>
       )}
 
-      <ChoiceGroup
+      <MultiChoiceGroup
         label="Inactive Hub Behavior"
-        hint="What did they do when their hub was turned off?"
+        hint="What did they do when their hub was turned off? (select all that apply)"
         options={[
           { label: "Defense", value: "defense" },
           { label: "Collect fuel (yellow ball)", value: "collect" },
