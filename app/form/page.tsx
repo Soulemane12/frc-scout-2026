@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card, CardHeader, CardTitle, CardContent, CardDescription,
-  Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter, StarRating, SectionDivider,
+  Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter, SectionDivider,
 } from "../components/ui";
 import { loadEntries, saveEntries } from "../lib/storage";
 import type { ScoutingEntry } from "../lib/types";
@@ -269,27 +269,6 @@ export default function FormPage() {
         ]}
         value={f.stayOn}
         onChange={(v) => set("stayOn", v)}
-      />
-
-      {/* ── HUMAN PLAYER ── */}
-      <SectionDivider title="Human Player" />
-
-      <ChoiceGroup
-        label="HP Scored Directly into Hub?"
-        hint="Human players can throw fuel (yellow ball) into the hub themselves"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.hpDirectScore}
-        onChange={(v) => set("hpDirectScore", v)}
-      />
-
-      <StarRating
-        label="Thrower Rating"
-        hint="Rate the human player's throwing accuracy"
-        value={f.throwerRating}
-        onChange={(v) => set("throwerRating", v)}
       />
 
       {/* ── ENDING ── */}
