@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Nav from "./components/Nav";
+import SupabaseSync from "./components/SupabaseSync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} bg-blue-50 antialiased`}>
         <Nav />
+        <SupabaseSync />
         {children}
       </body>
     </html>

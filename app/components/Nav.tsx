@@ -11,6 +11,7 @@ const links = [
   { href: "/pit", label: "Pit" },
   { href: "/submissions", label: "Submissions" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/mentor", label: "Mentor" },
 ];
 
 export default function Nav() {
