@@ -25,6 +25,7 @@ const CLIMB_CONFIG = [
 export default function AnalyticsPage() {
   const [entries, setEntries] = useState<ScoutingEntry[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [tab, setTab] = useState<"match" | "pit">("match");
 
   useEffect(() => {
     const update = () => {
@@ -81,8 +82,6 @@ export default function AnalyticsPage() {
   const autoClimbRate = pct(te.filter((e) => e.autoClimb === "yes").length, n);
   const winRate = pct(te.filter((e) => e.allianceWinner === e.allianceColor).length, n);
   const disabledRate = pct(te.filter((e) => e.robotDisabled === "yes").length, n);
-  const hpDirectRate = pct(te.filter((e) => e.hpDirectScore === "yes").length, n);
-  const avgHpRating = avg(te.filter((e) => e.throwerRating > 0).map((e) => e.throwerRating));
 
   const climbDist = {
     none: te.filter((e) => !e.teleopClimb || e.teleopClimb === "no").length,
@@ -109,6 +108,29 @@ export default function AnalyticsPage() {
         <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
         <p className="text-sm text-slate-500">REBUILT 2026</p>
       </div>
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 w-fit">
+        {(["match", "pit"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "rounded-lg px-5 py-1.5 text-sm font-semibold transition-all capitalize",
+              tab === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "pit" ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
+          <p className="text-slate-400 font-medium">No pit analytics yet</p>
+          <p className="text-sm text-slate-400 mt-1">Pit scouting questions coming soon</p>
+        </div>
+      ) : (<>
 
       {/* ── Overview ── */}
       <SectionDivider title="Overview" />
@@ -154,8 +176,6 @@ export default function AnalyticsPage() {
         <StatCard label="Win Rate" value={`${winRate}%`} accent={winRate >= 50 ? "border-l-green-500" : "border-l-red-400"} />
         <StatCard label="Mobility Rate" value={`${mobilityRate}%`} />
         <StatCard label="Auto Climb Rate" value={`${autoClimbRate}%`} />
-        <StatCard label="HP Direct Score" value={`${hpDirectRate}%`} />
-        <StatCard label="Avg HP Rating" value={avgHpRating > 0 ? `${avgHpRating.toFixed(1)} ★` : "—"} />
       </div>
 
       {/* Reliability warning */}
@@ -273,6 +293,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <div className="pb-4" />
+      </>)}
     </main>
   );
 }

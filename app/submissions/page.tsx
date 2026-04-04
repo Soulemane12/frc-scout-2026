@@ -8,7 +8,6 @@ import { Button, Input, Badge } from "../components/ui";
 import { cn } from "../lib/utils";
 
 const CLIMB_LABEL: Record<string, string> = { no: "No climb", l1: "L1", l2: "L2", l3: "L3" };
-const CLIMB_COLOR: Record<string, string> = { no: "slate", l1: "blue", l2: "teal", l3: "green" } as const;
 
 function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
@@ -17,12 +16,10 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
 
   return (
     <div className={cn("rounded-xl border bg-white shadow-sm overflow-hidden transition-shadow", open && "shadow-md")}>
-      {/* Header row */}
       <button
         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors"
         onClick={() => setOpen(!open)}
       >
-        {/* Alliance badge */}
         <span
           className={cn(
             "flex-shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-white",
@@ -32,15 +29,13 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
           {e.allianceColor?.toUpperCase() || "?"}
         </span>
 
-        {/* Team + match */}
         <div className="flex-1 min-w-0">
           <span className="font-semibold text-slate-900">Team {e.teamNumber}</span>
           <span className="ml-2 text-sm text-slate-400">Match {e.matchNumber}</span>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-2 text-xs text-slate-500 flex-shrink-0">
-          <span className="font-medium text-slate-700">{fuel} fuel (yellow ball)</span>
+        <div className="flex items-center gap-2 text-xs flex-shrink-0">
+          <span className="font-medium text-slate-700">{fuel} fuel</span>
           <span
             className={cn(
               "rounded-full px-2 py-0.5 font-semibold",
@@ -59,29 +54,15 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
         <span className="text-slate-300 text-sm ml-1">{open ? "▲" : "▼"}</span>
       </button>
 
-      {/* Expanded */}
       {open && (
         <div className="border-t border-slate-100 px-4 py-4">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+          {/* Section: Match Info */}
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Match Info</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
             {[
               ["Scouter", e.scouter || "—"],
-              ["Starting pos.", e.startingPosition || "—"],
               ["Preloaded", e.preloaded || "—"],
-              ["Auto cycles", e.autoCycles],
-              ["Auto fuel (yellow ball) / cycle", e.autoYellowPerCycle],
-              ["Mobility", e.autoMobility || "—"],
-              ["Auto climb", e.autoClimb || "—"],
-              ["Cycles", e.cycles],
-              ["Fuel (yellow ball) / cycle", e.yellowPerCycle],
-              ["Teleop fuel (yellow ball) est.", e.cycles * e.yellowPerCycle],
-              ["Inactive behavior", e.inactiveHubBehavior?.length ? e.inactiveHubBehavior.join(", ") : "—"],
-              ["Endgame climb", CLIMB_LABEL[e.teleopClimb] ?? "—"],
-              ["Stayed on", e.stayOn || "—"],
-              ["HP direct score", e.hpDirectScore || "—"],
-              ["HP rating", e.throwerRating ? "★".repeat(e.throwerRating) : "—"],
-              ["Disabled", e.robotDisabled || "—"],
-              ["Winner", e.allianceWinner || "—"],
-              ["Yellow card", e.yellowCard || "—"],
+              ["Alliance", e.allianceColor || "—"],
             ].map(([k, v]) => (
               <div key={k as string}>
                 <p className="text-xs font-medium text-slate-400">{k}</p>
@@ -90,17 +71,61 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
             ))}
           </div>
 
+          {/* Section: Auto */}
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Auto</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Cycles", e.autoCycles],
+              ["Fuel / cycle", e.autoYellowPerCycle],
+              ["Est. fuel", e.autoCycles * e.autoYellowPerCycle],
+              ["Crossed trench", e.autoMobility || "—"],
+              ["Climb (L1)", e.autoClimb || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Section: Teleop */}
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Teleop</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Cycles", e.cycles],
+              ["Fuel / cycle", e.yellowPerCycle],
+              ["Est. fuel", e.cycles * e.yellowPerCycle],
+              ["Inactive hub", e.inactiveHubBehavior?.length ? e.inactiveHubBehavior.join(", ") : "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Section: Endgame */}
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Endgame</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Climb", CLIMB_LABEL[e.teleopClimb] ?? "—"],
+              ["Stayed on", e.stayOn || "—"],
+              ["Disabled", e.robotDisabled || "—"],
+              ["Winner", e.allianceWinner || "—"],
+              ["Yellow card", e.yellowCard || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
           {(e.defense || e.strengths || e.weaknesses) && (
-            <div className="mt-4 flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
-              {e.defense && (
-                <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>
-              )}
-              {e.strengths && (
-                <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>
-              )}
-              {e.weaknesses && (
-                <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>
-              )}
+            <div className="mt-2 flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+              {e.defense && <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>}
+              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
             </div>
           )}
 
@@ -114,9 +139,12 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
   );
 }
 
+type Tab = "match" | "pit";
+
 export default function SubmissionsPage() {
   const [entries, setEntries] = useState<ScoutingEntry[]>([]);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<Tab>("match");
 
   useEffect(() => {
     const update = () => setEntries(loadEntries());
@@ -154,12 +182,31 @@ export default function SubmissionsPage() {
     <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Submissions</h1>
-        <p className="text-sm text-slate-500">
-          {entries.length} entr{entries.length !== 1 ? "ies" : "y"} saved
-        </p>
+        <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"} saved</p>
       </div>
 
-      {entries.length === 0 ? (
+      {/* Tab switcher */}
+      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 w-fit">
+        {(["match", "pit"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "rounded-lg px-5 py-1.5 text-sm font-semibold transition-all capitalize",
+              tab === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "pit" ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
+          <p className="text-slate-400 font-medium">No pit entries yet</p>
+          <p className="text-sm text-slate-400 mt-1">Pit scouting questions coming soon</p>
+        </div>
+      ) : entries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <p className="text-slate-400 font-medium">No submissions yet</p>
           <p className="text-sm text-slate-400 mt-1">Scout a match to get started</p>
