@@ -26,6 +26,33 @@ export interface ScoutingEntry {
   weaknesses: string;
 }
 
+export interface PitEntry {
+  id: string;
+  timestamp: number;
+  scouter: string;
+  teamNumber: string;
+  robotName: string;
+  motors: string;
+  drivetrainType: string;
+  fitsUnderTrench: string;
+  crossesBump: string;
+  fuelCollection: string[];
+  shootRange: string[];
+  cyclesEstimate: number;
+  shootsWhileMoving: string;
+  hubAdaptation: string;
+  scoreOpponentHub: string;
+  autoActions: string[];
+  autoConsistency: string;
+  maxClimb: string;
+  climbConsistency: string;
+  usesVision: string;
+  estimatedPoints: string;
+  strengths: string;
+  weaknesses: string;
+  notes: string;
+}
+
 export function totalFuel(e: ScoutingEntry) {
   return e.autoCycles * e.autoYellowPerCycle + e.cycles * e.yellowPerCycle;
 }

@@ -1,6 +1,7 @@
-import type { ScoutingEntry } from "./types";
+import type { ScoutingEntry, PitEntry } from "./types";
 
 export const STORAGE_KEY = "frc-scout-2026";
+export const PIT_STORAGE_KEY = "frc-pit-2026";
 
 export function loadEntries(): ScoutingEntry[] {
   if (typeof window === "undefined") return [];
@@ -13,6 +14,19 @@ export function loadEntries(): ScoutingEntry[] {
 
 export function saveEntries(entries: ScoutingEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  // Notify same-tab listeners (storage event only fires in other tabs)
+  window.dispatchEvent(new Event("scout-updated"));
+}
+
+export function loadPitEntries(): PitEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(PIT_STORAGE_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function savePitEntries(entries: PitEntry[]) {
+  localStorage.setItem(PIT_STORAGE_KEY, JSON.stringify(entries));
   window.dispatchEvent(new Event("scout-updated"));
 }

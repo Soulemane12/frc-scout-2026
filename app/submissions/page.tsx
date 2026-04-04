@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { loadEntries, saveEntries } from "../lib/storage";
+import { loadEntries, saveEntries, loadPitEntries, savePitEntries } from "../lib/storage";
 import { totalFuel } from "../lib/types";
-import type { ScoutingEntry } from "../lib/types";
-import { Button, Input, Badge } from "../components/ui";
+import type { ScoutingEntry, PitEntry } from "../lib/types";
+import { Button, Input } from "../components/ui";
 import { cn } from "../lib/utils";
 
 const CLIMB_LABEL: Record<string, string> = { no: "No climb", l1: "L1", l2: "L2", l3: "L3" };
@@ -139,15 +139,128 @@ function Row({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
   );
 }
 
+const CLIMB_LABEL_PIT: Record<string, string> = { none: "No climb", l1: "L1", l2: "L2", l3: "L3" };
+
+function PitRow({ e, onDelete }: { e: PitEntry; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={cn("rounded-xl border bg-white shadow-sm overflow-hidden transition-shadow", open && "shadow-md")}>
+      <button
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-slate-900">Team {e.teamNumber}</span>
+          {e.robotName && <span className="ml-2 text-sm text-slate-400">{e.robotName}</span>}
+        </div>
+        <div className="flex items-center gap-2 text-xs flex-shrink-0">
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600 capitalize">{e.drivetrainType || "—"}</span>
+          <span className={cn(
+            "rounded-full px-2 py-0.5 font-semibold",
+            e.maxClimb === "l3" ? "bg-green-100 text-green-700" :
+            e.maxClimb === "l2" ? "bg-teal-100 text-teal-700" :
+            e.maxClimb === "l1" ? "bg-blue-100 text-blue-700" :
+            "bg-slate-100 text-slate-500"
+          )}>
+            {CLIMB_LABEL_PIT[e.maxClimb] ?? "—"}
+          </span>
+        </div>
+        <span className="text-slate-300 text-sm ml-1">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 px-4 py-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Mechanical</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Motors", e.motors || "—"],
+              ["Drivetrain", e.drivetrainType || "—"],
+              ["Fits trench", e.fitsUnderTrench || "—"],
+              ["Crosses bump", e.crossesBump || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Fuel Scoring</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Collection", e.fuelCollection.join(", ") || "—"],
+              ["Shoot range", e.shootRange.join(", ") || "—"],
+              ["Est. cycles", e.cyclesEstimate],
+              ["Shoots moving", e.shootsWhileMoving || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Strategy & Auto</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Hub adaptation", e.hubAdaptation || "—"],
+              ["Opp. hub", e.scoreOpponentHub || "—"],
+              ["Auto actions", e.autoActions.join(", ") || "—"],
+              ["Auto consistency", e.autoConsistency || "—"],
+              ["Uses vision", e.usesVision || "—"],
+              ["Est. pts", e.estimatedPoints || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Endgame</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[
+              ["Max climb", CLIMB_LABEL_PIT[e.maxClimb] ?? "—"],
+              ["Climb consistency", e.climbConsistency || "—"],
+            ].map(([k, v]) => (
+              <div key={k as string}>
+                <p className="text-xs font-medium text-slate-400">{k}</p>
+                <p className="capitalize text-slate-800">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+
+          {(e.strengths || e.weaknesses || e.notes) && (
+            <div className="mt-2 flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+              {e.notes && <p><span className="font-semibold text-slate-500">Notes: </span><span className="text-slate-700">{e.notes}</span></p>}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-slate-400">{new Date(e.timestamp).toLocaleString()} · {e.scouter || "—"}</span>
+            <Button variant="destructive" size="sm" onClick={onDelete}>Delete</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type Tab = "match" | "pit";
 
 export default function SubmissionsPage() {
   const [entries, setEntries] = useState<ScoutingEntry[]>([]);
+  const [pitEntries, setPitEntries] = useState<PitEntry[]>([]);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("match");
 
   useEffect(() => {
-    const update = () => setEntries(loadEntries());
+    const update = () => {
+      setEntries(loadEntries());
+      setPitEntries(loadPitEntries());
+    };
     update();
     window.addEventListener("scout-updated", update);
     window.addEventListener("storage", update);
@@ -164,10 +277,23 @@ export default function SubmissionsPage() {
     saveEntries(next);
   }
 
+  function handleDeletePit(id: string) {
+    if (!confirm("Delete this pit entry?")) return;
+    const next = pitEntries.filter((e) => e.id !== id);
+    setPitEntries(next);
+    savePitEntries(next);
+  }
+
   function handleClearAll() {
     if (!confirm("Delete ALL submissions? This cannot be undone.")) return;
     setEntries([]);
     saveEntries([]);
+  }
+
+  function handleClearAllPit() {
+    if (!confirm("Delete ALL pit entries? This cannot be undone.")) return;
+    setPitEntries([]);
+    savePitEntries([]);
   }
 
   const filtered = [...entries]
@@ -178,11 +304,19 @@ export default function SubmissionsPage() {
       return e.teamNumber.includes(q) || e.matchNumber.includes(q) || e.scouter.toLowerCase().includes(q);
     });
 
+  const filteredPit = [...pitEntries]
+    .sort((a, b) => Number(a.teamNumber) - Number(b.teamNumber))
+    .filter((e) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return e.teamNumber.includes(q) || e.scouter.toLowerCase().includes(q) || e.robotName.toLowerCase().includes(q);
+    });
+
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Submissions</h1>
-        <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"} saved</p>
+        <p className="text-sm text-slate-500">{entries.length} match · {pitEntries.length} pit</p>
       </div>
 
       {/* Tab switcher */}
@@ -202,10 +336,35 @@ export default function SubmissionsPage() {
       </div>
 
       {tab === "pit" ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
-          <p className="text-slate-400 font-medium">No pit entries yet</p>
-          <p className="text-sm text-slate-400 mt-1">Pit scouting questions coming soon</p>
-        </div>
+        pitEntries.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
+            <p className="text-slate-400 font-medium">No pit entries yet</p>
+            <p className="text-sm text-slate-400 mt-1">Scout a pit to get started</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search by team, robot, or scouter..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1"
+              />
+              <Button variant="destructive" onClick={handleClearAllPit}>Clear All</Button>
+            </div>
+            {filteredPit.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white py-10 text-center">
+                <p className="text-sm text-slate-400">No results for &quot;{search}&quot;</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {filteredPit.map((e) => (
+                  <PitRow key={e.id} e={e} onDelete={() => handleDeletePit(e.id)} />
+                ))}
+              </div>
+            )}
+          </>
+        )
       ) : entries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <p className="text-slate-400 font-medium">No submissions yet</p>
