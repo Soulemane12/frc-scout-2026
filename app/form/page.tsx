@@ -221,7 +221,11 @@ export default function FormPage() {
       />
 
       {/* ── TELEOP ── */}
-      <SectionDivider title="Teleop / Stage" />
+      <div className="flex items-center gap-3 py-1">
+        <div className="h-px flex-1 bg-slate-300" />
+        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Teleop / Stage</span>
+        <div className="h-px flex-1 bg-slate-300" />
+      </div>
 
       <Counter
         label="Cycles"
