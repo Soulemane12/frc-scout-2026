@@ -7,7 +7,8 @@ import { loadEntries } from "../lib/storage";
 import { cn } from "../lib/utils";
 
 const links = [
-  { href: "/form", label: "Scout" },
+  { href: "/match", label: "Match" },
+  { href: "/pit", label: "Pit" },
   { href: "/submissions", label: "Submissions" },
   { href: "/analytics", label: "Analytics" },
 ];
