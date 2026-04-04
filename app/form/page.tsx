@@ -163,21 +163,15 @@ export default function FormPage() {
         onChange={(v) => set("allianceColor", v)}
       />
 
-      <ChoiceGroup
-        label="Starting Position"
-        hint="Where on the field did the robot start?"
-        options={[
-          { label: "Left", value: "left" },
-          { label: "Center", value: "center" },
-          { label: "Right", value: "right" },
-        ]}
-        cols={3}
-        value={f.startingPosition}
-        onChange={(v) => set("startingPosition", v)}
-      />
-
+      
       {/* ── AUTO ── */}
-      <SectionDivider title="Auto" />
+      <div className="flex items-center gap-3 py-1">
+        <div className="h-px flex-1 bg-slate-300" />
+        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Auto</span>
+        <div className="h-px flex-1 bg-slate-300" />
+      </div>
+
+      
 
       <ChoiceGroup
         label="Preloaded?"
@@ -206,7 +200,7 @@ export default function FormPage() {
 
       <ChoiceGroup
         label="Crossed Bump / Trench?"
-        hint="Does it go to the neutral zone?"
+        hint="Does it go to the neutral zone? (See Field Reference)"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
@@ -292,16 +286,18 @@ export default function FormPage() {
         onChange={(v) => set("teleopClimb", v)}
       />
 
-      <ChoiceGroup
-        label="Robot Stayed on Tower?"
-        hint="Was the climb still attached at the buzzer?"
-        options={[
-          { label: "Yes, stayed on", value: "yes" },
-          { label: "No, fell off", value: "no" },
-        ]}
-        value={f.stayOn}
-        onChange={(v) => set("stayOn", v)}
-      />
+      {["l1", "l2", "l3"].includes(f.teleopClimb) && (
+        <ChoiceGroup
+          label="Robot Stayed on Tower?"
+          hint="Was the climb still attached at the buzzer?"
+          options={[
+            { label: "Yes, stayed on", value: "yes" },
+            { label: "No, fell off", value: "no" },
+          ]}
+          value={f.stayOn}
+          onChange={(v) => set("stayOn", v)}
+        />
+      )}
 
       {/* ── ENDING ── */}
       <SectionDivider title="Ending" />
