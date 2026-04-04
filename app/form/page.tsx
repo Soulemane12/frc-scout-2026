@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Card, CardHeader, CardTitle, CardContent, CardDescription,
   Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter, SectionDivider,
@@ -39,6 +40,7 @@ export default function FormPage() {
   const router = useRouter();
   const [f, setF] = useState(BLANK);
   const [submitted, setSubmitted] = useState(false);
+  const [refOpen, setRefOpen] = useState(false);
 
   function set<K extends keyof typeof BLANK>(key: K, val: (typeof BLANK)[K]) {
     setF((prev) => ({ ...prev, [key]: val }));
@@ -81,6 +83,36 @@ export default function FormPage() {
       <div className="pb-1">
         <h1 className="text-2xl font-bold text-slate-900">Match Scouting</h1>
         <p className="text-sm text-slate-500">NYC Regional · REBUILT 2026</p>
+      </div>
+
+      {/* ── Field Reference ── */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setRefOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-5 py-3.5 text-left"
+        >
+          <span className="text-sm font-semibold text-slate-800">Field Reference</span>
+          <span className="text-slate-400 text-sm">{refOpen ? "▲ Hide" : "▼ Show"}</span>
+        </button>
+        {refOpen && (
+          <div className="flex flex-col gap-3 px-5 pb-5">
+            <Image
+              src="/scouting-ref-1.avif"
+              alt="Scouting reference diagram 1"
+              width={640}
+              height={400}
+              className="w-full rounded-lg border border-slate-100 object-contain"
+            />
+            <Image
+              src="/scouting-ref-2.avif"
+              alt="Scouting reference diagram 2"
+              width={640}
+              height={400}
+              className="w-full rounded-lg border border-slate-100 object-contain"
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Match Info ── */}
