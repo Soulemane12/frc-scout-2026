@@ -160,7 +160,7 @@ export default function FormPage() {
 
       <Counter
         label="Cycles"
-        hint="Shoot → collect → shoot = 1 cycle"
+        hint="Collect → shoot = 1 cycle"
         value={f.autoCycles}
         onChange={(v) => set("autoCycles", v)}
       />
@@ -199,7 +199,7 @@ export default function FormPage() {
 
       <Counter
         label="Cycles"
-        hint="Shoot → collect → shoot = 1 cycle"
+        hint="Collect → shoot = 1 cycle"
         value={f.cycles}
         onChange={(v) => set("cycles", v)}
       />
