@@ -154,7 +154,7 @@ export default function PitPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Robot Name</Label>
+              <Label>Team Name</Label>
               <Input
                 type="text"
                 placeholder="e.g. Titan"
