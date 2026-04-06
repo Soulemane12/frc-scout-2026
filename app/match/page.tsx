@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -8,7 +8,80 @@ import {
   Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter, SectionDivider,
 } from "../components/ui";
 import { loadEntries, saveEntries } from "../lib/storage";
+import { totalFuel } from "../lib/types";
 import type { ScoutingEntry } from "../lib/types";
+import { cn } from "../lib/utils";
+
+const CLIMB_LABEL: Record<string, string> = { no: "No climb", l1: "L1", l2: "L2", l3: "L3" };
+
+function MatchRow({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const fuel = totalFuel(e);
+  const won = e.allianceWinner === e.allianceColor;
+  return (
+    <div className={cn("rounded-xl border bg-white shadow-sm overflow-hidden", open && "shadow-md")}>
+      <button className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors" onClick={() => setOpen(!open)}>
+        <span className={cn("flex-shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-white", e.allianceColor === "blue" ? "bg-blue-500" : "bg-red-500")}>
+          {e.allianceColor?.toUpperCase() || "?"}
+        </span>
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-slate-900">Team {e.teamNumber}</span>
+          <span className="ml-2 text-sm text-slate-400">Match {e.matchNumber}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs flex-shrink-0">
+          <span className="font-medium text-slate-700">{fuel} fuel</span>
+          <span className={cn("rounded-full px-2 py-0.5 font-semibold",
+            e.teleopClimb === "l3" ? "bg-green-100 text-green-700" :
+            e.teleopClimb === "l2" ? "bg-teal-100 text-teal-700" :
+            e.teleopClimb === "l1" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+          )}>{CLIMB_LABEL[e.teleopClimb] ?? "—"}</span>
+          {won && <span className="rounded-full bg-yellow-100 px-2 py-0.5 font-semibold text-yellow-700">W</span>}
+          {e.robotDisabled === "yes" && <span className="rounded-full bg-red-100 px-2 py-0.5 font-semibold text-red-600">DQ</span>}
+        </div>
+        <span className="text-slate-300 text-sm ml-1">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 px-4 py-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Match Info</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[["Scouter", e.scouter || "—"], ["Preloaded", e.preloaded || "—"], ["Alliance", e.allianceColor || "—"]].map(([k, v]) => (
+              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{v}</p></div>
+            ))}
+          </div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Auto</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[["Cycles", e.autoCycles], ["Fuel / cycle", e.autoYellowPerCycle], ["Est. fuel", e.autoCycles * e.autoYellowPerCycle], ["Crossed trench", e.autoMobility || "—"], ["Climb (L1)", e.autoClimb || "—"]].map(([k, v]) => (
+              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
+            ))}
+          </div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Teleop</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[["Cycles", e.cycles], ["Fuel / cycle", e.yellowPerCycle], ["Est. fuel", e.cycles * e.yellowPerCycle], ["Inactive hub", e.inactiveHubBehavior?.length ? e.inactiveHubBehavior.join(", ") : "—"]].map(([k, v]) => (
+              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
+            ))}
+          </div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">Endgame</p>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-4">
+            {[["Climb", CLIMB_LABEL[e.teleopClimb] ?? "—"], ["Stayed on", e.stayOn || "—"], ["Disabled", e.robotDisabled || "—"], ["Winner", e.allianceWinner || "—"], ["Yellow card", e.yellowCard || "—"]].map(([k, v]) => (
+              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
+            ))}
+          </div>
+          {(e.defense || e.strengths || e.weaknesses) && (
+            <div className="mt-2 flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+              {e.defense && <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>}
+              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+            </div>
+          )}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-slate-400">{new Date(e.timestamp).toLocaleString()}</span>
+            <Button variant="destructive" size="sm" onClick={onDelete}>Delete</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const BLANK = {
   scouter: "",
@@ -41,6 +114,19 @@ export default function FormPage() {
   const [f, setF] = useState(BLANK);
   const [submitted, setSubmitted] = useState(false);
   const [refOpen, setRefOpen] = useState(false);
+  const [entries, setEntries] = useState<ScoutingEntry[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const update = () => setEntries(loadEntries());
+    update();
+    window.addEventListener("scout-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("scout-updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
 
   function set<K extends keyof typeof BLANK>(key: K, val: (typeof BLANK)[K]) {
     setF((prev) => ({ ...prev, [key]: val }));
@@ -390,6 +476,43 @@ export default function FormPage() {
       >
         Submit Scouting Entry
       </Button>
+
+      {/* ── My Submissions ── */}
+      {entries.length > 0 && (
+        <>
+          <div className="flex items-center gap-3 py-1 mt-2">
+            <div className="h-px flex-1 bg-slate-300" />
+            <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">My Submissions ({entries.length})</span>
+            <div className="h-px flex-1 bg-slate-300" />
+          </div>
+          <Input
+            placeholder="Search by team, match, or scouter..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="flex flex-col gap-2">
+            {[...entries]
+              .sort((a, b) => Number(a.matchNumber) - Number(b.matchNumber))
+              .filter((e) => {
+                if (!search) return true;
+                const q = search.toLowerCase();
+                return e.teamNumber.includes(q) || e.matchNumber.includes(q) || e.scouter.toLowerCase().includes(q);
+              })
+              .map((e) => (
+                <MatchRow
+                  key={e.id}
+                  e={e}
+                  onDelete={() => {
+                    if (!confirm("Delete this entry?")) return;
+                    const next = entries.filter((x) => x.id !== e.id);
+                    setEntries(next);
+                    saveEntries(next);
+                  }}
+                />
+              ))}
+          </div>
+        </>
+      )}
 
       <div className="pb-4" />
     </main>

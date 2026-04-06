@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card, CardHeader, CardTitle, CardContent,
@@ -8,6 +8,52 @@ import {
 } from "../components/ui";
 import { loadPitEntries, savePitEntries } from "../lib/storage";
 import type { PitEntry } from "../lib/types";
+import { cn } from "../lib/utils";
+
+const CLIMB_LABEL_PIT: Record<string, string> = { none: "No climb", l1: "L1", l2: "L2", l3: "L3" };
+
+function PitRow({ e, onDelete }: { e: PitEntry; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={cn("rounded-xl border bg-white shadow-sm overflow-hidden", open && "shadow-md")}>
+      <button className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors" onClick={() => setOpen(!open)}>
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-slate-900">Team {e.teamNumber}</span>
+          {e.robotName && <span className="ml-2 text-sm text-slate-400">{e.robotName}</span>}
+        </div>
+        <div className="flex items-center gap-2 text-xs flex-shrink-0">
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600 capitalize">{e.drivetrainType || "—"}</span>
+          <span className={cn("rounded-full px-2 py-0.5 font-semibold",
+            e.maxClimb === "l3" ? "bg-green-100 text-green-700" :
+            e.maxClimb === "l2" ? "bg-teal-100 text-teal-700" :
+            e.maxClimb === "l1" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+          )}>{CLIMB_LABEL_PIT[e.maxClimb] ?? "—"}</span>
+        </div>
+        <span className="text-slate-300 text-sm ml-1">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 px-4 py-4">
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-3">
+            {[["Motors", e.motors || "—"], ["Drivetrain", e.drivetrainType || "—"], ["Fits trench", e.fitsUnderTrench || "—"], ["Crosses bump", e.crossesBump || "—"], ["Hub adaptation", e.hubAdaptation || "—"], ["Max climb", CLIMB_LABEL_PIT[e.maxClimb] ?? "—"], ["Uses vision", e.usesVision || "—"], ["Est. pts", e.estimatedPoints || "—"]].map(([k, v]) => (
+              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
+            ))}
+          </div>
+          {(e.strengths || e.weaknesses || e.notes) && (
+            <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+              {e.notes && <p><span className="font-semibold text-slate-500">Notes: </span><span className="text-slate-700">{e.notes}</span></p>}
+            </div>
+          )}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-slate-400">{new Date(e.timestamp).toLocaleString()}</span>
+            <Button variant="destructive" size="sm" onClick={onDelete}>Delete</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const BLANK: Omit<PitEntry, "id" | "timestamp"> = {
   scouter: "",
@@ -38,6 +84,19 @@ export default function PitPage() {
   const router = useRouter();
   const [f, setF] = useState(BLANK);
   const [submitted, setSubmitted] = useState(false);
+  const [entries, setEntries] = useState<PitEntry[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const update = () => setEntries(loadPitEntries());
+    update();
+    window.addEventListener("scout-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("scout-updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
 
   function set<K extends keyof typeof BLANK>(key: K, val: (typeof BLANK)[K]) {
     setF((prev) => ({ ...prev, [key]: val }));
@@ -384,6 +443,42 @@ export default function PitPage() {
       <Button size="lg" onClick={handleSubmit} className="w-full rounded-xl shadow-md">
         Submit Pit Entry
       </Button>
+
+      {entries.length > 0 && (
+        <>
+          <div className="flex items-center gap-3 py-1 mt-2">
+            <div className="h-px flex-1 bg-slate-300" />
+            <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">My Pit Entries ({entries.length})</span>
+            <div className="h-px flex-1 bg-slate-300" />
+          </div>
+          <Input
+            placeholder="Search by team or robot name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="flex flex-col gap-2">
+            {[...entries]
+              .sort((a, b) => Number(a.teamNumber) - Number(b.teamNumber))
+              .filter((e) => {
+                if (!search) return true;
+                const q = search.toLowerCase();
+                return e.teamNumber.includes(q) || e.robotName.toLowerCase().includes(q) || e.scouter.toLowerCase().includes(q);
+              })
+              .map((e) => (
+                <PitRow
+                  key={e.id}
+                  e={e}
+                  onDelete={() => {
+                    if (!confirm("Delete this entry?")) return;
+                    const next = entries.filter((x) => x.id !== e.id);
+                    setEntries(next);
+                    savePitEntries(next);
+                  }}
+                />
+              ))}
+          </div>
+        </>
+      )}
 
       <div className="pb-4" />
     </main>
