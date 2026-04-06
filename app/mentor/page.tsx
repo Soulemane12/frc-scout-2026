@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchAllMatchEntries, fetchAllPitEntries } from "../lib/storage";
+import { fetchAllMatchEntries, fetchAllPitEntries, deleteMatchEntries, deletePitEntries } from "../lib/storage";
 import { totalFuel, climbPts, avg, pct } from "../lib/types";
 import type { ScoutingEntry, PitEntry } from "../lib/types";
 import {
@@ -481,6 +481,9 @@ export default function MentorPage() {
   const [tab, setTab] = useState<"match" | "pit">("match");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -528,6 +531,115 @@ export default function MentorPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Total Match Entries" value={matchEntries.length} accent="border-l-blue-500" />
             <StatCard label="Total Pit Entries" value={pitEntries.length} accent="border-l-teal-500" />
+          </div>
+
+          {/* ── Manage Data ── */}
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => { setManageOpen((o) => !o); setSelected(new Set()); }}
+              className="flex w-full items-center justify-between px-5 py-3.5 text-left"
+            >
+              <span className="text-sm font-semibold text-slate-800">Manage Data</span>
+              <span className="text-slate-400 text-sm">{manageOpen ? "▲ Close" : "▼ Open"}</span>
+            </button>
+
+            {manageOpen && (
+              <div className="border-t border-slate-100 px-5 pb-5 pt-4 flex flex-col gap-3">
+                {/* Tab selector */}
+                <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 w-fit">
+                  {(["match", "pit"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => { setTab(t); setSelected(new Set()); }}
+                      className={cn(
+                        "rounded-md px-4 py-1 text-xs font-semibold transition-all capitalize",
+                        tab === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Select all / deselect */}
+                {(() => {
+                  const list = tab === "match" ? matchEntries : pitEntries;
+                  const allSelected = list.length > 0 && list.every((e) => selected.has(e.id));
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={() => {
+                              if (allSelected) {
+                                setSelected(new Set());
+                              } else {
+                                setSelected(new Set(list.map((e) => e.id)));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-300"
+                          />
+                          Select all ({list.length})
+                        </label>
+                        {selected.size > 0 && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deleting}
+                            onClick={async () => {
+                              if (!confirm(`Delete ${selected.size} entr${selected.size !== 1 ? "ies" : "y"}? This cannot be undone.`)) return;
+                              setDeleting(true);
+                              const ids = [...selected];
+                              if (tab === "match") {
+                                await deleteMatchEntries(ids);
+                                setMatchEntries((prev) => prev.filter((e) => !selected.has(e.id)));
+                              } else {
+                                await deletePitEntries(ids);
+                                setPitEntries((prev) => prev.filter((e) => !selected.has(e.id)));
+                              }
+                              setSelected(new Set());
+                              setDeleting(false);
+                            }}
+                          >
+                            {deleting ? "Deleting…" : `Delete ${selected.size} selected`}
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+                        {list.map((e) => {
+                          const label = tab === "match"
+                            ? `Team ${(e as ScoutingEntry).teamNumber} · Match ${(e as ScoutingEntry).matchNumber} · ${(e as ScoutingEntry).scouter || "—"}`
+                            : `Team ${(e as PitEntry).teamNumber}${(e as PitEntry).robotName ? ` · ${(e as PitEntry).robotName}` : ""} · ${(e as PitEntry).scouter || "—"}`;
+                          return (
+                            <label key={e.id} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm cursor-pointer hover:bg-slate-100">
+                              <input
+                                type="checkbox"
+                                checked={selected.has(e.id)}
+                                onChange={() => {
+                                  setSelected((prev) => {
+                                    const next = new Set(prev);
+                                    next.has(e.id) ? next.delete(e.id) : next.add(e.id);
+                                    return next;
+                                  });
+                                }}
+                                className="h-4 w-4 rounded border-slate-300 flex-shrink-0"
+                              />
+                              <span className="text-slate-700">{label}</span>
+                              <span className="ml-auto text-xs text-slate-400">{new Date(e.timestamp).toLocaleDateString()}</span>
+                            </label>
+                          );
+                        })}
+                        {list.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">No entries</p>}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 w-fit">

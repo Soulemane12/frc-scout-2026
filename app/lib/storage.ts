@@ -188,6 +188,18 @@ export async function fetchAllPitEntries(): Promise<PitEntry[]> {
   return data.map(rowToPitEntry);
 }
 
+// ── Supabase deletes (mentor page) ───────────────────────────────────────────
+
+export async function deleteMatchEntries(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await supabase.from("match_entries").delete().in("id", ids);
+}
+
+export async function deletePitEntries(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await supabase.from("pit_entries").delete().in("id", ids);
+}
+
 // ── Online recovery ───────────────────────────────────────────────────────────
 
 export async function syncOnReconnect() {
