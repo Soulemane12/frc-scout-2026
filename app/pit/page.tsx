@@ -7,10 +7,18 @@ import {
   Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter,
 } from "../components/ui";
 import { loadPitEntries, savePitEntries } from "../lib/storage";
+import { supabase } from "../lib/supabase";
 import type { PitEntry } from "../lib/types";
 import { cn } from "../lib/utils";
 
 const CLIMB_LABEL_PIT: Record<string, string> = { none: "No climb", l1: "L1", l2: "L2", l3: "L3" };
+const ROBOT_PHOTOS_BUCKET = "robot-photos";
+
+type PhotoDraft = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
 
 function PitRow({ e, onDelete }: { e: PitEntry; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
@@ -45,6 +53,18 @@ function PitRow({ e, onDelete }: { e: PitEntry; onDelete: () => void }) {
               {e.notes && <p><span className="font-semibold text-slate-500">Notes: </span><span className="text-slate-700">{e.notes}</span></p>}
             </div>
           )}
+          {(e.robotPhotoUrls ?? []).length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {(e.robotPhotoUrls ?? []).map((photo, i) => (
+                <img
+                  key={`${e.id}-photo-${i}`}
+                  src={photo}
+                  alt={`Team ${e.teamNumber} robot photo ${i + 1}`}
+                  className="h-24 w-full rounded-lg border border-slate-200 object-cover"
+                />
+              ))}
+            </div>
+          )}
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-slate-400">{new Date(e.timestamp).toLocaleString()}</span>
             <Button variant="destructive" size="sm" onClick={onDelete}>Delete</Button>
@@ -75,6 +95,7 @@ const BLANK: Omit<PitEntry, "id" | "timestamp"> = {
   climbConsistency: "",
   usesVision: "",
   estimatedPoints: "",
+  robotPhotoUrls: [],
   strengths: "",
   weaknesses: "",
   notes: "",
@@ -86,6 +107,8 @@ export default function PitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [entries, setEntries] = useState<PitEntry[]>([]);
   const [search, setSearch] = useState("");
+  const [photoDrafts, setPhotoDrafts] = useState<PhotoDraft[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const update = () => setEntries(loadPitEntries());
@@ -102,17 +125,62 @@ export default function PitPage() {
     setF((prev) => ({ ...prev, [key]: val }));
   }
 
-  function handleSubmit() {
+  async function uploadRobotPhotos(entryId: string) {
+    const uploads = await Promise.all(photoDrafts.map(async ({ file }, i) => {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${f.teamNumber || "unknown-team"}/${entryId}/${i + 1}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(ROBOT_PHOTOS_BUCKET).upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type || "image/jpeg",
+        upsert: false,
+      });
+      if (error) throw error;
+      return supabase.storage.from(ROBOT_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl;
+    }));
+    return uploads;
+  }
+
+  async function handleSubmit() {
     if (!f.teamNumber) {
       alert("Please fill in a Team Number before submitting.");
       return;
     }
-    const entry: PitEntry = { ...f, id: crypto.randomUUID(), timestamp: Date.now() };
-    savePitEntries([entry, ...loadPitEntries()]);
-    setF(BLANK);
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(() => setSubmitted(false), 4000);
+    setSaving(true);
+    try {
+      const id = crypto.randomUUID();
+      const robotPhotoUrls = await uploadRobotPhotos(id);
+      const entry: PitEntry = { ...f, robotPhotoUrls, id, timestamp: Date.now() };
+      savePitEntries([entry, ...loadPitEntries()]);
+      photoDrafts.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
+      setPhotoDrafts([]);
+      setF(BLANK);
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch (error) {
+      console.error(error);
+      alert("Could not upload robot photos. Please check Supabase Storage setup and try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handlePhotoChange(files: FileList | null) {
+    if (!files?.length) return;
+    const next = Array.from(files).map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPhotoDrafts((prev) => [...prev, ...next]);
+  }
+
+  function removePhotoDraft(id: string) {
+    setPhotoDrafts((prev) => {
+      const draft = prev.find((photo) => photo.id === id);
+      if (draft) URL.revokeObjectURL(draft.previewUrl);
+      return prev.filter((photo) => photo.id !== id);
+    });
   }
 
   return (
@@ -410,6 +478,44 @@ export default function PitPage() {
       </Card>
 
       <Card>
+        <CardHeader><CardTitle>Robot Photos</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label>Take or Upload Photos</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                onChange={(e) => {
+                  handlePhotoChange(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <p className="text-xs text-slate-400">You can take or select multiple robot pictures.</p>
+            </div>
+            {photoDrafts.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {photoDrafts.map((photo, i) => (
+                  <div key={photo.id} className="relative">
+                    <img src={photo.previewUrl} alt={`Robot preview ${i + 1}`} className="h-24 w-full rounded-lg border border-slate-200 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhotoDraft(photo.id)}
+                      className="absolute right-1 top-1 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Strengths</CardTitle></CardHeader>
         <CardContent>
           <Textarea
@@ -445,8 +551,8 @@ export default function PitPage() {
         </CardContent>
       </Card>
 
-      <Button size="lg" onClick={handleSubmit} className="w-full rounded-xl shadow-md">
-        Submit Pit Entry
+      <Button size="lg" onClick={handleSubmit} disabled={saving} className="w-full rounded-xl shadow-md">
+        {saving ? "Saving..." : "Submit Pit Entry"}
       </Button>
 
       {entries.length > 0 && (

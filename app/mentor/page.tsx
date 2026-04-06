@@ -31,6 +31,13 @@ const CLIMB_LABEL: Record<string, string> = { none: "No climb", l1: "L1", l2: "L
 const COLLECTION_LABELS: Record<string, string> = { depot: "Depot", floor: "Floor pickup", "hp-pass": "HP pass" };
 const RANGE_LABELS: Record<string, string> = { close: "Close range", mid: "Mid range", far: "Far range" };
 const AUTO_LABELS: Record<string, string> = { fuel: "Scores fuel", climb: "Climbs L1", trench: "Crosses trench", move: "Just moves", nothing: "Nothing" };
+const HUB_ADAPTATION_LABELS: Record<string, string> = {
+  defense: "Defense",
+  collect: "Collect fuel",
+  cross: "Cross bump/trench",
+  ferry: "Ferrying",
+  wait: "Waited / nothing",
+};
 
 // ── Match Analytics ───────────────────────────────────────────────────────────
 
@@ -261,7 +268,7 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
 
   const visionCount = entries.filter((e) => e.usesVision === "yes").length;
   const climbCapable = entries.filter((e) => ["l1", "l2", "l3"].includes(e.maxClimb)).length;
-  const adaptCount = entries.filter((e) => e.hubAdaptation === "yes").length;
+  const adaptCount = entries.filter((e) => e.hubAdaptation.length > 0).length;
   const oppHubCount = entries.filter((e) => e.scoreOpponentHub === "yes").length;
 
   const climbFleet: Record<string, number> = { none: 0, l1: 0, l2: 0, l3: 0 };
@@ -363,7 +370,11 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Drivetrain" value={pit.drivetrainType || "—"} />
             <StatCard label="Max Climb" value={CLIMB_LABEL[pit.maxClimb] ?? "—"} accent="border-l-teal-500" />
-            <StatCard label="Hub Adaptation" value={pit.hubAdaptation || "—"} accent={pit.hubAdaptation === "yes" ? "border-l-green-500" : pit.hubAdaptation === "wip" ? "border-l-yellow-500" : "border-l-red-400"} />
+            <StatCard
+              label="Hub Adaptation"
+              value={pit.hubAdaptation.length ? pit.hubAdaptation.map((v) => HUB_ADAPTATION_LABELS[v] ?? v).join(", ") : "—"}
+              accent={pit.hubAdaptation.length ? "border-l-green-500" : "border-l-red-400"}
+            />
             <StatCard label="Scores Opp. Hub" value={pit.scoreOpponentHub || "—"} />
             <StatCard label="Fits Trench" value={pit.fitsUnderTrench || "—"} />
             <StatCard label="Crosses Bump" value={pit.crossesBump || "—"} />
@@ -418,6 +429,24 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
               )}
             </CardContent>
           </Card>
+
+          {(pit.robotPhotoUrls ?? []).length > 0 && (
+            <Card>
+              <CardHeader><CardTitle>Robot Photos</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {(pit.robotPhotoUrls ?? []).map((photo, i) => (
+                    <img
+                      key={`${pit.id}-photo-${i}`}
+                      src={photo}
+                      alt={`Team ${pit.teamNumber} robot photo ${i + 1}`}
+                      className="h-24 w-full rounded-lg border border-slate-200 object-cover"
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {(pit.strengths || pit.weaknesses || pit.notes) && (
             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-sm">

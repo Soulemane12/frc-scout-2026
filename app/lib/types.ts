@@ -48,6 +48,7 @@ export interface PitEntry {
   climbConsistency: string;
   usesVision: string;
   estimatedPoints: string;
+  robotPhotoUrls: string[];
   strengths: string;
   weaknesses: string;
   notes: string;
