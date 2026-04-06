@@ -298,7 +298,7 @@ export default function PitPage() {
       />
 
       <ChoiceGroup
-        label="Can Score in Opponent's Hub?"
+        label="Can it score in opponent's hub?"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
