@@ -322,9 +322,16 @@ export function Counter({
           >
             −
           </button>
-          <div className="flex h-10 min-w-[5rem] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 text-2xl font-bold text-slate-900">
-            {value}
-          </div>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10);
+              onChange(isNaN(n) ? 0 : Math.max(0, n));
+            }}
+            className="flex h-10 min-w-[5rem] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 text-2xl font-bold text-slate-900 text-center w-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
           <button
             onClick={() => onChange(value + 1)}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 shadow-sm text-lg font-bold hover:bg-blue-100 transition-colors active:scale-95"

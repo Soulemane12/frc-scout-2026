@@ -40,7 +40,7 @@ export interface PitEntry {
   shootRange: string[];
   cyclesEstimate: number;
   shootsWhileMoving: string;
-  hubAdaptation: string;
+  hubAdaptation: string[];
   scoreOpponentHub: string;
   autoActions: string[];
   autoConsistency: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchAllMatchEntries, fetchAllPitEntries, deleteMatchEntries, deletePitEntries } from "../lib/storage";
+import { fetchAllMatchEntries, fetchAllPitEntries, deleteMatchEntries, deletePitEntries, STORAGE_KEY, PIT_STORAGE_KEY } from "../lib/storage";
 import { totalFuel, climbPts, avg, pct } from "../lib/types";
 import type { ScoutingEntry, PitEntry } from "../lib/types";
 import {
@@ -596,9 +596,17 @@ export default function MentorPage() {
                               if (tab === "match") {
                                 await deleteMatchEntries(ids);
                                 setMatchEntries((prev) => prev.filter((e) => !selected.has(e.id)));
+                                try {
+                                  const local = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+                                  localStorage.setItem(STORAGE_KEY, JSON.stringify(local.filter((e: { id: string }) => !selected.has(e.id))));
+                                } catch {}
                               } else {
                                 await deletePitEntries(ids);
                                 setPitEntries((prev) => prev.filter((e) => !selected.has(e.id)));
+                                try {
+                                  const local = JSON.parse(localStorage.getItem(PIT_STORAGE_KEY) ?? "[]");
+                                  localStorage.setItem(PIT_STORAGE_KEY, JSON.stringify(local.filter((e: { id: string }) => !selected.has(e.id))));
+                                } catch {}
                               }
                               setSelected(new Set());
                               setDeleting(false);

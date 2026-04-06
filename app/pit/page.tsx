@@ -67,7 +67,7 @@ const BLANK: Omit<PitEntry, "id" | "timestamp"> = {
   shootRange: [],
   cyclesEstimate: 0,
   shootsWhileMoving: "",
-  hubAdaptation: "",
+  hubAdaptation: [],
   scoreOpponentHub: "",
   autoActions: [],
   autoConsistency: "",
@@ -284,15 +284,16 @@ export default function PitPage() {
         <div className="h-px flex-1 bg-slate-300" />
       </div>
 
-      <ChoiceGroup
-        label="Adapts When Hub Is Inactive?"
-        hint="Does the robot change strategy when their hub turns off?"
+      <MultiChoiceGroup
+        label="Inactive Hub Behavior"
+        hint="What did they do when their hub was turned off? (select all that apply)"
         options={[
-          { label: "Yes", value: "yes" },
-          { label: "Working on it", value: "wip" },
-          { label: "No", value: "no" },
+          { label: "Defense", value: "defense" },
+          { label: "Collect fuel (yellow ball)", value: "collect" },
+          { label: "Cross bump/trench", value: "cross" },
+          { label: "Ferrying", value: "ferry" },
+          { label: "Waited / nothing", value: "wait" },
         ]}
-        cols={3}
         value={f.hubAdaptation}
         onChange={(v) => set("hubAdaptation", v)}
       />
