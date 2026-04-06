@@ -297,15 +297,19 @@ export default function PitPage() {
         onChange={(v) => set("hubAdaptation", v)}
       />
 
-      <ChoiceGroup
-        label="Can it score in opponent's hub?"
+    {/*  <ChoiceGroup
+        label="Can it score in hub?"
         options={[
           { label: "Yes", value: "yes" },
           { label: "No", value: "no" },
         ]}
         value={f.scoreOpponentHub}
         onChange={(v) => set("scoreOpponentHub", v)}
-      />
+      />*
+      
+      /}
+
+      
 
       {/* ── Auto ── */}
       <div className="flex items-center gap-3 py-1">
