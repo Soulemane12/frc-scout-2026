@@ -4,6 +4,12 @@ import { supabase } from "./supabase";
 export const STORAGE_KEY = "frc-scout-2026";
 export const PIT_STORAGE_KEY = "frc-pit-2026";
 
+function stringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value === "string" && value) return [value];
+  return [];
+}
+
 // ── Local storage (unchanged API) ────────────────────────────────────────────
 
 export function loadEntries(): ScoutingEntry[] {
@@ -24,7 +30,15 @@ export function saveEntries(entries: ScoutingEntry[]) {
 export function loadPitEntries(): PitEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(PIT_STORAGE_KEY) ?? "[]");
+    const entries = JSON.parse(localStorage.getItem(PIT_STORAGE_KEY) ?? "[]") as Array<Record<string, unknown>>;
+    return entries.map((entry) => ({
+      ...entry,
+      fuelCollection: stringArray(entry.fuelCollection),
+      shootRange: stringArray(entry.shootRange),
+      hubAdaptation: stringArray(entry.hubAdaptation),
+      autoActions: stringArray(entry.autoActions),
+      robotPhotoUrls: stringArray(entry.robotPhotoUrls),
+    })) as PitEntry[];
   } catch {
     return [];
   }
@@ -109,19 +123,19 @@ function pitEntryToRow(e: PitEntry) {
     drivetrain_type:      e.drivetrainType,
     fits_under_trench:    e.fitsUnderTrench,
     crosses_bump:         e.crossesBump,
-    fuel_collection:      e.fuelCollection,
-    shoot_range:          e.shootRange,
+    fuel_collection:      stringArray(e.fuelCollection),
+    shoot_range:          stringArray(e.shootRange),
     cycles_estimate:      e.cyclesEstimate,
     shoots_while_moving:  e.shootsWhileMoving,
-    hub_adaptation:       e.hubAdaptation as string[],
+    hub_adaptation:       stringArray(e.hubAdaptation),
     score_opponent_hub:   e.scoreOpponentHub,
-    auto_actions:         e.autoActions,
+    auto_actions:         stringArray(e.autoActions),
     auto_consistency:     e.autoConsistency,
     max_climb:            e.maxClimb,
     climb_consistency:    e.climbConsistency,
     uses_vision:          e.usesVision,
     estimated_points:     e.estimatedPoints,
-    robot_photo_urls:     e.robotPhotoUrls ?? [],
+    robot_photo_urls:     stringArray(e.robotPhotoUrls),
     strengths:            e.strengths,
     weaknesses:           e.weaknesses,
     notes:                e.notes,
@@ -139,19 +153,19 @@ function rowToPitEntry(row: Record<string, unknown>): PitEntry {
     drivetrainType:      (row.drivetrain_type as string) ?? "",
     fitsUnderTrench:     (row.fits_under_trench as string) ?? "",
     crossesBump:         (row.crosses_bump as string) ?? "",
-    fuelCollection:      (row.fuel_collection as string[]) ?? [],
-    shootRange:          (row.shoot_range as string[]) ?? [],
+    fuelCollection:      stringArray(row.fuel_collection),
+    shootRange:          stringArray(row.shoot_range),
     cyclesEstimate:      (row.cycles_estimate as number) ?? 0,
     shootsWhileMoving:   (row.shoots_while_moving as string) ?? "",
-    hubAdaptation:       (row.hub_adaptation as string[]) ?? [],
+    hubAdaptation:       stringArray(row.hub_adaptation),
     scoreOpponentHub:    (row.score_opponent_hub as string) ?? "",
-    autoActions:         (row.auto_actions as string[]) ?? [],
+    autoActions:         stringArray(row.auto_actions),
     autoConsistency:     (row.auto_consistency as string) ?? "",
     maxClimb:            (row.max_climb as string) ?? "",
     climbConsistency:    (row.climb_consistency as string) ?? "",
     usesVision:          (row.uses_vision as string) ?? "",
     estimatedPoints:     (row.estimated_points as string) ?? "",
-    robotPhotoUrls:      (row.robot_photo_urls as string[]) ?? [],
+    robotPhotoUrls:      stringArray(row.robot_photo_urls),
     strengths:           (row.strengths as string) ?? "",
     weaknesses:          (row.weaknesses as string) ?? "",
     notes:               (row.notes as string) ?? "",

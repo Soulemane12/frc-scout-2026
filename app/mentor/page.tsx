@@ -39,6 +39,12 @@ const HUB_ADAPTATION_LABELS: Record<string, string> = {
   wait: "Waited / nothing",
 };
 
+function arrayField(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value === "string" && value) return [value];
+  return [];
+}
+
 // ── Match Analytics ───────────────────────────────────────────────────────────
 
 function MatchAnalytics({ entries }: { entries: ScoutingEntry[] }) {
@@ -268,7 +274,7 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
 
   const visionCount = entries.filter((e) => e.usesVision === "yes").length;
   const climbCapable = entries.filter((e) => ["l1", "l2", "l3"].includes(e.maxClimb)).length;
-  const adaptCount = entries.filter((e) => e.hubAdaptation.length > 0).length;
+  const adaptCount = entries.filter((e) => arrayField(e.hubAdaptation).length > 0).length;
   const oppHubCount = entries.filter((e) => e.scoreOpponentHub === "yes").length;
 
   const climbFleet: Record<string, number> = { none: 0, l1: 0, l2: 0, l3: 0 };
@@ -372,8 +378,8 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
             <StatCard label="Max Climb" value={CLIMB_LABEL[pit.maxClimb] ?? "—"} accent="border-l-teal-500" />
             <StatCard
               label="Hub Adaptation"
-              value={pit.hubAdaptation.length ? pit.hubAdaptation.map((v) => HUB_ADAPTATION_LABELS[v] ?? v).join(", ") : "—"}
-              accent={pit.hubAdaptation.length ? "border-l-green-500" : "border-l-red-400"}
+              value={arrayField(pit.hubAdaptation).length ? arrayField(pit.hubAdaptation).map((v) => HUB_ADAPTATION_LABELS[v] ?? v).join(", ") : "—"}
+              accent={arrayField(pit.hubAdaptation).length ? "border-l-green-500" : "border-l-red-400"}
             />
             <StatCard label="Scores Opp. Hub" value={pit.scoreOpponentHub || "—"} />
             <StatCard label="Fits Trench" value={pit.fitsUnderTrench || "—"} />
