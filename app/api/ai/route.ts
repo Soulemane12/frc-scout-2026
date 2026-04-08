@@ -3,8 +3,6 @@ import Groq from "groq-sdk";
 import { fetchAllMatchEntries, fetchAllPitEntries } from "@/app/lib/storage";
 import { ScoutingEntry, PitEntry, totalFuel, climbPts, avg, pct } from "@/app/lib/types";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 function buildMatchStats(entries: ScoutingEntry[]): string {
   const byTeam = new Map<string, ScoutingEntry[]>();
   for (const e of entries) {
@@ -116,6 +114,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = buildSystemPrompt(matchEntries, pitEntries);
 
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
