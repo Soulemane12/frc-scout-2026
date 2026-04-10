@@ -562,6 +562,7 @@ export default function MentorPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [dateFilter, setDateFilter] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -653,7 +654,7 @@ export default function MentorPage() {
                   {(["match", "pit"] as const).map((t) => (
                     <button
                       key={t}
-                      onClick={() => { setTab(t); setSelected(new Set()); }}
+                      onClick={() => { setTab(t); setSelected(new Set()); setDateFilter(""); }}
                       className={cn(
                         "rounded-md px-4 py-1 text-xs font-semibold transition-all capitalize",
                         tab === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
@@ -664,12 +665,36 @@ export default function MentorPage() {
                   ))}
                 </div>
 
-                {/* Select all / deselect */}
+                {/* Date filter */}
                 {(() => {
-                  const list = tab === "match" ? matchEntries : pitEntries;
-                  const allSelected = list.length > 0 && list.every((e) => selected.has(e.id));
+                  const allList = tab === "match" ? matchEntries : pitEntries;
+                  const filtered = dateFilter
+                    ? allList.filter((e) => new Date(e.timestamp).toLocaleDateString() === new Date(dateFilter).toLocaleDateString())
+                    : allList;
+                  const allSelected = filtered.length > 0 && filtered.every((e) => selected.has(e.id));
+
                   return (
                     <>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Filter by date</label>
+                          <input
+                            type="date"
+                            value={dateFilter}
+                            onChange={(e) => { setDateFilter(e.target.value); setSelected(new Set()); }}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        {dateFilter && (
+                          <button
+                            onClick={() => { setDateFilter(""); setSelected(new Set()); }}
+                            className="mt-5 text-xs font-semibold text-slate-400 hover:text-slate-700"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
                           <input
@@ -679,12 +704,12 @@ export default function MentorPage() {
                               if (allSelected) {
                                 setSelected(new Set());
                               } else {
-                                setSelected(new Set(list.map((e) => e.id)));
+                                setSelected(new Set(filtered.map((e) => e.id)));
                               }
                             }}
                             className="h-4 w-4 rounded border-slate-300"
                           />
-                          Select all ({list.length})
+                          Select all ({filtered.length}{dateFilter ? " on this date" : ""})
                         </label>
                         {selected.size > 0 && (
                           <Button
@@ -720,7 +745,7 @@ export default function MentorPage() {
                       </div>
 
                       <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
-                        {list.map((e) => {
+                        {filtered.map((e) => {
                           const label = tab === "match"
                             ? `Team ${(e as ScoutingEntry).teamNumber} · Match ${(e as ScoutingEntry).matchNumber} · ${(e as ScoutingEntry).scouter || "—"}`
                             : `Team ${(e as PitEntry).teamNumber}${(e as PitEntry).robotName ? ` · ${(e as PitEntry).robotName}` : ""} · ${(e as PitEntry).scouter || "—"}`;
@@ -739,11 +764,15 @@ export default function MentorPage() {
                                 className="h-4 w-4 rounded border-slate-300 flex-shrink-0"
                               />
                               <span className="text-slate-700">{label}</span>
-                              <span className="ml-auto text-xs text-slate-400">{new Date(e.timestamp).toLocaleDateString()}</span>
+                              <span className="ml-auto text-xs text-slate-400 shrink-0">{new Date(e.timestamp).toLocaleDateString()}</span>
                             </label>
                           );
                         })}
-                        {list.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">No entries</p>}
+                        {filtered.length === 0 && (
+                          <p className="text-sm text-slate-400 py-4 text-center">
+                            {dateFilter ? "No entries on this date" : "No entries"}
+                          </p>
+                        )}
                       </div>
                     </>
                   );
