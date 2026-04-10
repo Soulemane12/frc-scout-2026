@@ -24,6 +24,7 @@ export interface ScoutingEntry {
   defense: string;
   strengths: string;
   weaknesses: string;
+  lossReason: string;
 }
 
 export interface PitEntry {

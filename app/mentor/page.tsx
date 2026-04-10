@@ -248,7 +248,7 @@ function MatchAnalytics({ entries }: { entries: ScoutingEntry[] }) {
 
 // ── Pit Analytics ─────────────────────────────────────────────────────────────
 
-function PitAnalytics({ entries }: { entries: PitEntry[] }) {
+function PitAnalytics({ entries, matchEntries }: { entries: PitEntry[]; matchEntries: ScoutingEntry[] }) {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
 
   useEffect(() => {
@@ -461,6 +461,49 @@ function PitAnalytics({ entries }: { entries: PitEntry[] }) {
               {pit.notes && <p><span className="font-semibold text-slate-500">Notes: </span><span className="text-slate-700">{pit.notes}</span></p>}
             </div>
           )}
+
+          {(() => {
+            const teamMatchEntries = matchEntries.filter((e) => e.teamNumber === team);
+            const notes = teamMatchEntries.filter(
+              (e) => e.defense || e.strengths || e.weaknesses || e.lossReason
+            );
+            if (!notes.length) return null;
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>What Scouters Said</CardTitle>
+                  <CardDescription>{notes.length} match observation{notes.length !== 1 ? "s" : ""} for Team {team}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col divide-y divide-slate-100">
+                    {notes.map((e) => (
+                      <div key={e.id} className="py-3 flex flex-col gap-1.5 text-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "rounded px-2 py-0.5 text-xs font-bold text-white",
+                            e.allianceColor === "blue" ? "bg-blue-500" : "bg-red-500"
+                          )}>
+                            Match {e.matchNumber}
+                          </span>
+                          <span className="text-xs text-slate-400">by {e.scouter || "unknown"}</span>
+                          {e.allianceWinner !== e.allianceColor && (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">L</span>
+                          )}
+                          {e.allianceWinner === e.allianceColor && (
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600">W</span>
+                          )}
+                        </div>
+                        {e.defense && <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>}
+                        {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+                        {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+                        {e.lossReason && <p><span className="font-semibold text-red-500">Loss reason: </span><span className="text-slate-700">{e.lossReason}</span></p>}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           <SectionDivider title="Team Comparison" />
 
@@ -702,7 +745,7 @@ export default function MentorPage() {
 
           {tab === "match"
             ? <MatchAnalytics entries={matchEntries} />
-            : <PitAnalytics entries={pitEntries} />
+            : <PitAnalytics entries={pitEntries} matchEntries={matchEntries} />
           }
         </>
       )}

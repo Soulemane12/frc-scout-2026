@@ -79,6 +79,7 @@ function matchEntryToRow(e: ScoutingEntry) {
     defense:                e.defense,
     strengths:              e.strengths,
     weaknesses:             e.weaknesses,
+    loss_reason:            e.lossReason,
   };
 }
 
@@ -109,6 +110,7 @@ function rowToMatchEntry(row: Record<string, unknown>): ScoutingEntry {
     defense:              (row.defense as string) ?? "",
     strengths:            (row.strengths as string) ?? "",
     weaknesses:           (row.weaknesses as string) ?? "",
+    lossReason:           (row.loss_reason as string) ?? "",
   };
 }
 

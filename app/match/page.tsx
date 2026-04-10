@@ -66,11 +66,12 @@ function MatchRow({ e, onDelete }: { e: ScoutingEntry; onDelete: () => void }) {
               <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
             ))}
           </div>
-          {(e.defense || e.strengths || e.weaknesses) && (
+          {(e.defense || e.strengths || e.weaknesses || e.lossReason) && (
             <div className="mt-2 flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
               {e.defense && <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>}
               {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
               {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+              {e.lossReason && <p><span className="font-semibold text-red-500">Loss reason: </span><span className="text-slate-700">{e.lossReason}</span></p>}
             </div>
           )}
           <div className="mt-3 flex items-center justify-between">
@@ -107,6 +108,7 @@ const BLANK = {
   defense: "",
   strengths: "",
   weaknesses: "",
+  lossReason: "",
 };
 
 export default function FormPage() {
@@ -467,6 +469,23 @@ export default function FormPage() {
           />
         </CardContent>
       </Card>
+
+      {f.allianceWinner && f.allianceColor && f.allianceWinner !== f.allianceColor && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Why Did the Alliance Lose?</CardTitle>
+            <CardDescription>What caused the loss? (e.g. missed climbs, defense held them back, low fuel output)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              rows={3}
+              placeholder="e.g. Alliance struggled to score enough fuel, opponent played effective defense..."
+              value={f.lossReason}
+              onChange={(e) => set("lossReason", e.target.value)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Submit */}
       <Button
