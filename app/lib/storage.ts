@@ -218,6 +218,47 @@ export async function deletePitEntries(ids: string[]): Promise<void> {
   await supabase.from("pit_entries").delete().in("id", ids);
 }
 
+// ── Nuke everything ──────────────────────────────────────────────────────────
+
+export async function deleteAllData(): Promise<void> {
+  // 1. Delete all DB rows
+  await supabase.from("match_entries").delete().neq("id", "");
+  await supabase.from("pit_entries").delete().neq("id", "");
+
+  // 2. Delete robot photos: list top-level folders (team numbers) then remove files
+  try {
+    const { data: folders } = await supabase.storage.from("robot-photos").list("");
+    if (folders?.length) {
+      for (const folder of folders) {
+        const { data: files } = await supabase.storage
+          .from("robot-photos")
+          .list(folder.name, { limit: 200 });
+        if (files?.length) {
+          for (const file of files) {
+            const { data: subfiles } = await supabase.storage
+              .from("robot-photos")
+              .list(`${folder.name}/${file.name}`, { limit: 200 });
+            if (subfiles?.length) {
+              await supabase.storage
+                .from("robot-photos")
+                .remove(subfiles.map((f) => `${folder.name}/${file.name}/${f.name}`));
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // photo deletion is best-effort
+  }
+
+  // 3. Clear this device's localStorage
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PIT_STORAGE_KEY);
+    window.dispatchEvent(new Event("scout-updated"));
+  }
+}
+
 // ── Online recovery ───────────────────────────────────────────────────────────
 
 export async function syncOnReconnect() {

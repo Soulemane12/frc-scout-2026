@@ -504,6 +504,20 @@ export default function FormPage() {
             <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">My Submissions ({entries.length})</span>
             <div className="h-px flex-1 bg-slate-300" />
           </div>
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+            <p className="text-xs text-slate-500">Need to reset? Tap to clear your local data.</p>
+            <button
+              onClick={() => {
+                if (!confirm("Clear all your local submissions on this device?")) return;
+                localStorage.removeItem("frc-scout-2026");
+                window.dispatchEvent(new Event("scout-updated"));
+                setEntries([]);
+              }}
+              className="text-xs font-semibold text-red-500 hover:text-red-700"
+            >
+              Clear local data
+            </button>
+          </div>
           <Input
             placeholder="Search by team, match, or scouter..."
             value={search}

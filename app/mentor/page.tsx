@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchAllMatchEntries, fetchAllPitEntries, deleteMatchEntries, deletePitEntries, STORAGE_KEY, PIT_STORAGE_KEY } from "../lib/storage";
+import { fetchAllMatchEntries, fetchAllPitEntries, deleteMatchEntries, deletePitEntries, deleteAllData, STORAGE_KEY, PIT_STORAGE_KEY } from "../lib/storage";
 import { totalFuel, climbPts, avg, pct } from "../lib/types";
 import type { ScoutingEntry, PitEntry } from "../lib/types";
 import {
@@ -624,6 +624,30 @@ export default function MentorPage() {
 
             {manageOpen && (
               <div className="border-t border-slate-100 px-5 pb-5 pt-4 flex flex-col gap-3">
+                {/* Nuke button */}
+                <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-red-700">Delete ALL Data</p>
+                    <p className="text-xs text-red-500 mt-0.5">Wipes every match entry, pit entry, and robot photo. Cannot be undone.</p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={deleting}
+                    onClick={async () => {
+                      if (!confirm("Delete ALL match entries, pit entries, and robot photos? This cannot be undone.")) return;
+                      setDeleting(true);
+                      await deleteAllData();
+                      setMatchEntries([]);
+                      setPitEntries([]);
+                      setSelected(new Set());
+                      setDeleting(false);
+                    }}
+                  >
+                    {deleting ? "Deleting…" : "Delete All"}
+                  </Button>
+                </div>
+
                 {/* Tab selector */}
                 <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 w-fit">
                   {(["match", "pit"] as const).map((t) => (
