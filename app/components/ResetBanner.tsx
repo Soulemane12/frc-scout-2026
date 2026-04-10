@@ -64,12 +64,6 @@ export default function ResetBanner() {
           >
             {clearing ? "Clearing…" : "Clear My Data Now"}
           </button>
-          <button
-            onClick={() => setShow(false)}
-            className="w-full rounded-xl border border-slate-200 text-slate-500 font-medium py-2.5 text-sm hover:bg-slate-50 transition-colors"
-          >
-            Dismiss for now
-          </button>
         </div>
       </div>
     </div>
