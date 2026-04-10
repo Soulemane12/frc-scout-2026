@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import Nav from "./components/Nav";
 import SupabaseSync from "./components/SupabaseSync";
+import ResetBanner from "./components/ResetBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} bg-blue-50 antialiased`}>
         <Nav />
         <SupabaseSync />
+        <ResetBanner />
         {children}
       </body>
     </html>
