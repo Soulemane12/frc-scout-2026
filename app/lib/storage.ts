@@ -218,6 +218,37 @@ export async function deletePitEntries(ids: string[]): Promise<void> {
   await supabase.from("pit_entries").delete().in("id", ids);
 }
 
+// ── Auto-purge data before cutoff date ───────────────────────────────────────
+
+const PURGE_CUTOFF = new Date("2026-04-10T00:00:00.000Z").getTime();
+const PURGE_FLAG = "frc-purged-before-2026-04-10";
+
+export async function purgeOldData(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(PURGE_FLAG)) return; // already ran
+
+  // Delete old rows from Supabase
+  await supabase.from("match_entries").delete().lt("timestamp", PURGE_CUTOFF);
+  await supabase.from("pit_entries").delete().lt("timestamp", PURGE_CUTOFF);
+
+  // Clear old entries from localStorage
+  try {
+    const localMatch = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as { timestamp: number }[];
+    const filteredMatch = localMatch.filter((e) => e.timestamp >= PURGE_CUTOFF);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredMatch));
+
+    const localPit = JSON.parse(localStorage.getItem(PIT_STORAGE_KEY) ?? "[]") as { timestamp: number }[];
+    const filteredPit = localPit.filter((e) => e.timestamp >= PURGE_CUTOFF);
+    localStorage.setItem(PIT_STORAGE_KEY, JSON.stringify(filteredPit));
+
+    window.dispatchEvent(new Event("scout-updated"));
+  } catch {
+    // ignore parse errors
+  }
+
+  localStorage.setItem(PURGE_FLAG, "1");
+}
+
 // ── Nuke everything ──────────────────────────────────────────────────────────
 
 export async function deleteAllData(): Promise<void> {
