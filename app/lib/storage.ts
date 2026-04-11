@@ -188,10 +188,13 @@ async function syncPitEntriesToSupabase(entries: PitEntry[]) {
 
 // ── Supabase reads (mentor page) ──────────────────────────────────────────────
 
+const FETCH_CUTOFF = new Date("2026-04-10T00:00:00.000Z").getTime();
+
 export async function fetchAllMatchEntries(): Promise<ScoutingEntry[]> {
   const { data, error } = await supabase
     .from("match_entries")
     .select("*")
+    .gte("timestamp", FETCH_CUTOFF)
     .order("timestamp", { ascending: false });
   if (error || !data) return [];
   return data.map(rowToMatchEntry);
@@ -201,6 +204,7 @@ export async function fetchAllPitEntries(): Promise<PitEntry[]> {
   const { data, error } = await supabase
     .from("pit_entries")
     .select("*")
+    .gte("timestamp", FETCH_CUTOFF)
     .order("timestamp", { ascending: false });
   if (error || !data) return [];
   return data.map(rowToPitEntry);
@@ -221,13 +225,11 @@ export async function deletePitEntries(ids: string[]): Promise<void> {
 // ── Auto-purge data before cutoff date ───────────────────────────────────────
 
 const PURGE_CUTOFF = new Date("2026-04-10T00:00:00.000Z").getTime();
-const PURGE_FLAG = "frc-purged-before-2026-04-10";
 
 export async function purgeOldData(): Promise<void> {
   if (typeof window === "undefined") return;
-  if (localStorage.getItem(PURGE_FLAG)) return; // already ran
 
-  // Delete old rows from Supabase
+  // Delete old rows from Supabase (idempotent — instant when nothing matches)
   await supabase.from("match_entries").delete().lt("timestamp", PURGE_CUTOFF);
   await supabase.from("pit_entries").delete().lt("timestamp", PURGE_CUTOFF);
 
@@ -245,8 +247,6 @@ export async function purgeOldData(): Promise<void> {
   } catch {
     // ignore parse errors
   }
-
-  localStorage.setItem(PURGE_FLAG, "1");
 }
 
 // ── Nuke everything ──────────────────────────────────────────────────────────
