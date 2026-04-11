@@ -45,6 +45,91 @@ function arrayField(value: unknown): string[] {
   return [];
 }
 
+// ── Match History Row ─────────────────────────────────────────────────────────
+
+function MatchHistoryRow({ e, won, autoFuel, teleopFuel, hasNotes }: {
+  e: ScoutingEntry; won: boolean; autoFuel: number; teleopFuel: number; hasNotes: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={cn("rounded-xl border overflow-hidden", open ? "border-blue-200 shadow-sm" : "border-slate-100")}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
+      >
+        <span className={cn(
+          "shrink-0 rounded px-2 py-0.5 text-xs font-bold text-white",
+          e.allianceColor === "blue" ? "bg-blue-500" : "bg-red-500"
+        )}>M{e.matchNumber}</span>
+        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold",
+          won ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+        )}>{won ? "W" : "L"}</span>
+        <div className="flex-1 grid grid-cols-3 gap-x-2 text-xs text-slate-600">
+          <span><span className="font-semibold text-slate-800">{autoFuel}</span> auto fuel</span>
+          <span><span className="font-semibold text-slate-800">{e.cycles}</span> cyc · <span className="font-semibold text-slate-800">{teleopFuel}</span> fuel</span>
+          <span className={cn("font-semibold",
+            e.teleopClimb === "l3" ? "text-green-600" :
+            e.teleopClimb === "l2" ? "text-teal-600" :
+            e.teleopClimb === "l1" ? "text-blue-600" : "text-slate-400"
+          )}>{CLIMB_LABEL[e.teleopClimb] ?? "No climb"}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {e.robotDisabled === "yes" && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-600">DQ</span>}
+          {e.yellowCard === "yes" && <span className="rounded-full bg-yellow-100 px-1.5 py-0.5 text-xs font-bold text-yellow-700">YC</span>}
+          {hasNotes && <span className="text-slate-300 text-xs">📝</span>}
+          <span className="text-slate-300 text-xs ml-1">{open ? "▲" : "▼"}</span>
+        </div>
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 px-3 py-3 bg-slate-50 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Auto</p>
+              <div className="flex flex-col gap-1 text-slate-700">
+                <p>Preloaded: <span className="font-medium capitalize">{e.preloaded || "—"}</span></p>
+                <p>Cycles: <span className="font-medium">{e.autoCycles}</span> · Fuel/cyc: <span className="font-medium">{e.autoYellowPerCycle}</span></p>
+                <p>Est. fuel: <span className="font-semibold text-blue-700">{autoFuel}</span></p>
+                <p>Crossed trench: <span className="font-medium capitalize">{e.autoMobility || "—"}</span></p>
+                <p>Auto climb: <span className="font-medium capitalize">{e.autoClimb || "—"}</span></p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Teleop</p>
+              <div className="flex flex-col gap-1 text-slate-700">
+                <p>Cycles: <span className="font-medium">{e.cycles}</span> · Fuel/cyc: <span className="font-medium">{e.yellowPerCycle}</span></p>
+                <p>Est. fuel: <span className="font-semibold text-blue-700">{teleopFuel}</span></p>
+                <p>Climb: <span className={cn("font-semibold",
+                  e.teleopClimb === "l3" ? "text-green-600" :
+                  e.teleopClimb === "l2" ? "text-teal-600" :
+                  e.teleopClimb === "l1" ? "text-blue-600" : "text-slate-500"
+                )}>{CLIMB_LABEL[e.teleopClimb] ?? "None"}</span></p>
+                <p>Stayed on: <span className="font-medium capitalize">{e.stayOn || "—"}</span></p>
+                {(e.inactiveHubBehavior ?? []).length > 0 && (
+                  <p>Hub behavior: <span className="font-medium">{e.inactiveHubBehavior.map((b) => INACTIVE_LABELS[b] ?? b).join(", ")}</span></p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-700">
+            <p>Scouter: <span className="font-medium">{e.scouter || "—"}</span></p>
+            <p>Starting pos: <span className="font-medium capitalize">{e.startingPosition || "—"}</span></p>
+            <p>Disabled: <span className={cn("font-medium", e.robotDisabled === "yes" ? "text-red-600" : "")}>{e.robotDisabled || "—"}</span></p>
+            <p>Yellow card: <span className={cn("font-medium", e.yellowCard === "yes" ? "text-yellow-600" : "")}>{e.yellowCard || "—"}</span></p>
+          </div>
+          {(e.defense || e.strengths || e.weaknesses || e.lossReason) && (
+            <div className="flex flex-col gap-1 rounded-lg bg-white border border-slate-100 p-2.5 text-sm">
+              {e.defense && <p><span className="font-semibold text-slate-500">Defense: </span><span className="text-slate-700">{e.defense}</span></p>}
+              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
+              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
+              {e.lossReason && <p><span className="font-semibold text-red-500">Loss reason: </span><span className="text-slate-700">{e.lossReason}</span></p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Match Analytics ───────────────────────────────────────────────────────────
 
 function MatchAnalytics({ entries }: { entries: ScoutingEntry[] }) {
@@ -155,6 +240,34 @@ function MatchAnalytics({ entries }: { entries: ScoutingEntry[] }) {
           </div>
         </div>
       )}
+
+      {/* ── Full Match History ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Match History</CardTitle>
+          <CardDescription>Every scouted match for Team {team}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            {[...te].sort((a, b) => Number(a.matchNumber) - Number(b.matchNumber)).map((e) => {
+              const won = e.allianceWinner === e.allianceColor;
+              const autoFuel = e.autoCycles * e.autoYellowPerCycle;
+              const teleopFuel = e.cycles * e.yellowPerCycle;
+              const hasNotes = e.defense || e.strengths || e.weaknesses || e.lossReason;
+              return (
+                <MatchHistoryRow
+                  key={e.id}
+                  e={e}
+                  won={won}
+                  autoFuel={autoFuel}
+                  teleopFuel={teleopFuel}
+                  hasNotes={!!hasNotes}
+                />
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
