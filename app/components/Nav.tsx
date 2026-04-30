@@ -7,7 +7,7 @@ import { cn } from "../lib/utils";
 const links = [
   { href: "/conference", label: "Conference" },
   { href: "/pit", label: "Pit" },
-  { href: "/mentor", label: "Mentor" },
+  { href: "/mentor", label: "View All" },
 ];
 
 export default function Nav() {
@@ -24,22 +24,20 @@ export default function Nav() {
         </div>
 
         <nav className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
-          {links
-            .filter((l) => !(l.href === "/mentor" && (pathname === "/conference" || pathname === "/pit")))
-            .map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
-                  pathname === l.href
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-900"
-                )}
-              >
-                {l.label}
-              </Link>
-            ))}
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                pathname === l.href
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

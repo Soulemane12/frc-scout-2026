@@ -59,7 +59,7 @@ export default function MentorPage() {
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Mentor View</h1>
+        <h1 className="text-2xl font-bold text-slate-900">All Submissions</h1>
         <button
           onClick={load}
           className="text-xs font-semibold text-blue-600 hover:text-blue-800"
