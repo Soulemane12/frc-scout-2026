@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { STORAGE_KEY, PIT_STORAGE_KEY } from "../lib/storage";
+import { CONFERENCE_STORAGE_KEY, PIT_STORAGE_KEY } from "../lib/storage";
 
 export default function ResetBanner() {
   const [show, setShow] = useState(false);
@@ -10,22 +10,20 @@ export default function ResetBanner() {
 
   useEffect(() => {
     async function check() {
-      // Only run if this device has local data
       const hasLocal =
-        (localStorage.getItem(STORAGE_KEY) ?? "[]") !== "[]" ||
+        (localStorage.getItem(CONFERENCE_STORAGE_KEY) ?? "[]") !== "[]" ||
         (localStorage.getItem(PIT_STORAGE_KEY) ?? "[]") !== "[]";
       if (!hasLocal) return;
 
-      // Lightweight count check — no data transfer
-      const { count: matchCount, error: mErr } = await supabase
-        .from("match_entries")
+      const { count: confCount, error: cErr } = await supabase
+        .from("conference_entries")
         .select("*", { count: "exact", head: true });
       const { count: pitCount, error: pErr } = await supabase
         .from("pit_entries")
         .select("*", { count: "exact", head: true });
 
-      if (mErr || pErr) return; // network issue — don't prompt
-      if ((matchCount ?? 1) === 0 && (pitCount ?? 1) === 0) {
+      if (cErr || pErr) return;
+      if ((confCount ?? 1) === 0 && (pitCount ?? 1) === 0) {
         setShow(true);
       }
     }
@@ -36,7 +34,7 @@ export default function ResetBanner() {
 
   function clear() {
     setClearing(true);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CONFERENCE_STORAGE_KEY);
     localStorage.removeItem(PIT_STORAGE_KEY);
     window.dispatchEvent(new Event("scout-updated"));
     setShow(false);
@@ -50,7 +48,7 @@ export default function ResetBanner() {
           <div className="text-3xl mb-2">🔄</div>
           <h2 className="text-lg font-bold">Data Reset</h2>
           <p className="text-sm text-red-100 mt-1">
-            The admin has cleared all scouting data. Your device still has old entries.
+            The admin has cleared all data. Your device still has old entries.
           </p>
         </div>
         <div className="px-6 py-5 flex flex-col gap-3">

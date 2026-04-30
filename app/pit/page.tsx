@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Card, CardHeader, CardTitle, CardContent,
-  Button, Input, Textarea, Label, ChoiceGroup, MultiChoiceGroup, Counter,
+  Button, Input, Textarea, Label,
 } from "../components/ui";
 import { loadPitEntries, savePitEntries } from "../lib/storage";
 import { supabase } from "../lib/supabase";
 import type { PitEntry } from "../lib/types";
-import { cn } from "../lib/utils";
 
-const CLIMB_LABEL_PIT: Record<string, string> = { none: "No climb", l1: "L1", l2: "L2", l3: "L3" };
 const ROBOT_PHOTOS_BUCKET = "robot-photos";
 
 type PhotoDraft = {
@@ -20,136 +17,52 @@ type PhotoDraft = {
   previewUrl: string;
 };
 
-function PitRow({ e, onDelete }: { e: PitEntry; onDelete: () => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className={cn("rounded-xl border bg-white shadow-sm overflow-hidden", open && "shadow-md")}>
-      <button className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors" onClick={() => setOpen(!open)}>
-        <div className="flex-1 min-w-0">
-          <span className="font-semibold text-slate-900">Team {e.teamNumber}</span>
-          {e.robotName && <span className="ml-2 text-sm text-slate-400">{e.robotName}</span>}
-        </div>
-        <div className="flex items-center gap-2 text-xs flex-shrink-0">
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600 capitalize">{e.drivetrainType || "—"}</span>
-          <span className={cn("rounded-full px-2 py-0.5 font-semibold",
-            e.maxClimb === "l3" ? "bg-green-100 text-green-700" :
-            e.maxClimb === "l2" ? "bg-teal-100 text-teal-700" :
-            e.maxClimb === "l1" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
-          )}>{CLIMB_LABEL_PIT[e.maxClimb] ?? "—"}</span>
-        </div>
-        <span className="text-slate-300 text-sm ml-1">{open ? "▲" : "▼"}</span>
-      </button>
-      {open && (
-        <div className="border-t border-slate-100 px-4 py-4">
-          <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-3">
-            {[["Motors", e.motors || "—"], ["Drivetrain", e.drivetrainType || "—"], ["Fits trench", e.fitsUnderTrench || "—"], ["Crosses bump", e.crossesBump || "—"], ["Hub adaptation", e.hubAdaptation || "—"], ["Max climb", CLIMB_LABEL_PIT[e.maxClimb] ?? "—"], ["Uses vision", e.usesVision || "—"], ["Est. pts", e.estimatedPoints || "—"]].map(([k, v]) => (
-              <div key={k as string}><p className="text-xs font-medium text-slate-400">{k}</p><p className="capitalize text-slate-800">{String(v)}</p></div>
-            ))}
-          </div>
-          {(e.strengths || e.weaknesses || e.notes) && (
-            <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
-              {e.strengths && <p><span className="font-semibold text-slate-500">Strengths: </span><span className="text-slate-700">{e.strengths}</span></p>}
-              {e.weaknesses && <p><span className="font-semibold text-slate-500">Weaknesses: </span><span className="text-slate-700">{e.weaknesses}</span></p>}
-              {e.notes && <p><span className="font-semibold text-slate-500">Notes: </span><span className="text-slate-700">{e.notes}</span></p>}
-            </div>
-          )}
-          {(e.robotPhotoUrls ?? []).length > 0 && (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {(e.robotPhotoUrls ?? []).map((photo, i) => (
-                <img
-                  key={`${e.id}-photo-${i}`}
-                  src={photo}
-                  alt={`Team ${e.teamNumber} robot photo ${i + 1}`}
-                  className="h-24 w-full rounded-lg border border-slate-200 object-cover"
-                />
-              ))}
-            </div>
-          )}
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-slate-400">{new Date(e.timestamp).toLocaleString()}</span>
-            <Button variant="destructive" size="sm" onClick={onDelete}>Delete</Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const BLANK: Omit<PitEntry, "id" | "timestamp"> = {
-  scouter: "",
-  teamNumber: "",
-  robotName: "",
-  motors: "",
-  drivetrainType: "",
-  fitsUnderTrench: "",
-  crossesBump: "",
-  fuelCollection: [],
-  shootRange: [],
-  cyclesEstimate: 0,
-  shootsWhileMoving: "",
-  hubAdaptation: [],
-  scoreOpponentHub: "",
-  autoActions: [],
-  autoConsistency: "",
-  maxClimb: "",
-  climbConsistency: "",
-  usesVision: "",
-  estimatedPoints: "",
-  robotPhotoUrls: [],
-  strengths: "",
-  weaknesses: "",
-  notes: "",
+const BLANK = {
+  firstName: "",
+  lastName: "",
+  teamNameAndNumber: "",
+  instagram: "",
+  learned: "",
 };
 
 export default function PitPage() {
-  const router = useRouter();
   const [f, setF] = useState(BLANK);
   const [submitted, setSubmitted] = useState(false);
-  const [entries, setEntries] = useState<PitEntry[]>([]);
-  const [search, setSearch] = useState("");
   const [photoDrafts, setPhotoDrafts] = useState<PhotoDraft[]>([]);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const update = () => setEntries(loadPitEntries());
-    update();
-    window.addEventListener("scout-updated", update);
-    window.addEventListener("storage", update);
-    return () => {
-      window.removeEventListener("scout-updated", update);
-      window.removeEventListener("storage", update);
-    };
-  }, []);
-
-  function set<K extends keyof typeof BLANK>(key: K, val: (typeof BLANK)[K]) {
+  function set<K extends keyof typeof BLANK>(key: K, val: string) {
     setF((prev) => ({ ...prev, [key]: val }));
   }
 
-  async function uploadRobotPhotos(entryId: string) {
-    const uploads = await Promise.all(photoDrafts.map(async ({ file }, i) => {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${f.teamNumber || "unknown-team"}/${entryId}/${i + 1}-${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(ROBOT_PHOTOS_BUCKET).upload(path, file, {
-        cacheControl: "31536000",
-        contentType: file.type || "image/jpeg",
-        upsert: false,
-      });
-      if (error) throw error;
-      return supabase.storage.from(ROBOT_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl;
-    }));
+  async function uploadPhotos(entryId: string): Promise<string[]> {
+    const uploads = await Promise.all(
+      photoDrafts.map(async ({ file }, i) => {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const teamSlug = f.teamNameAndNumber.replace(/\s+/g, "-").toLowerCase() || "unknown-team";
+        const path = `${teamSlug}/${entryId}/${i + 1}-${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from(ROBOT_PHOTOS_BUCKET).upload(path, file, {
+          cacheControl: "31536000",
+          contentType: file.type || "image/jpeg",
+          upsert: false,
+        });
+        if (error) throw error;
+        return supabase.storage.from(ROBOT_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl;
+      })
+    );
     return uploads;
   }
 
   async function handleSubmit() {
-    if (!f.teamNumber) {
-      alert("Please fill in a Team Number before submitting.");
+    if (!f.firstName.trim() || !f.lastName.trim()) {
+      alert("Please fill in your first and last name before submitting.");
       return;
     }
     setSaving(true);
     try {
       const id = crypto.randomUUID();
-      const robotPhotoUrls = await uploadRobotPhotos(id);
-      const entry: PitEntry = { ...f, robotPhotoUrls, id, timestamp: Date.now() };
+      const photoUrls = photoDrafts.length > 0 ? await uploadPhotos(id) : [];
+      const entry: PitEntry = { ...f, photoUrls, id, timestamp: Date.now() };
       savePitEntries([entry, ...loadPitEntries()]);
       photoDrafts.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
       setPhotoDrafts([]);
@@ -159,7 +72,7 @@ export default function PitPage() {
       setTimeout(() => setSubmitted(false), 4000);
     } catch (error) {
       console.error(error);
-      alert("Could not upload robot photos. Please check Supabase Storage setup and try again.");
+      alert("Could not upload photos. Please check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -177,9 +90,9 @@ export default function PitPage() {
 
   function removePhotoDraft(id: string) {
     setPhotoDrafts((prev) => {
-      const draft = prev.find((photo) => photo.id === id);
+      const draft = prev.find((p) => p.id === id);
       if (draft) URL.revokeObjectURL(draft.previewUrl);
-      return prev.filter((photo) => photo.id !== id);
+      return prev.filter((p) => p.id !== id);
     });
   }
 
@@ -187,319 +100,64 @@ export default function PitPage() {
     <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-8">
 
       {submitted && (
-        <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-5 py-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-green-800">
-            <span className="text-base">✓</span> Pit entry saved!
-          </div>
-          <button
-            onClick={() => router.push("/submissions")}
-            className="text-sm font-semibold text-green-700 underline underline-offset-2 hover:text-green-900"
-          >
-            View →
-          </button>
+        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-sm font-medium text-green-800">
+          <span className="text-base">✓</span> Pit entry saved!
         </div>
       )}
 
       <div className="pb-1">
-        <h1 className="text-2xl font-bold text-slate-900">Pit Scouting</h1>
-        <p className="text-sm text-slate-500">NYC Regional · REBUILT 2026</p>
+        <h1 className="text-2xl font-bold text-slate-900">PIT</h1>
       </div>
 
-      {/* ── Identity ── */}
+      <Card>
+        <CardHeader><CardTitle>Team Name and Number</CardTitle></CardHeader>
+        <CardContent>
+          <Input
+            type="text"
+            placeholder="e.g. 4571 Titan"
+            value={f.teamNameAndNumber}
+            onChange={(e) => set("teamNameAndNumber", e.target.value)}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>Identity</CardTitle>
+          <CardTitle>Can I take a picture of your pit? Can I take a picture of your robot? Can I take a group pic with you guys?</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Team Number</Label>
-              <Input
-                type="number"
-                placeholder="e.g. 4571"
-                value={f.teamNumber}
-                onChange={(e) => set("teamNumber", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Team Name</Label>
-              <Input
-                type="text"
-                placeholder="e.g. Titan"
-                value={f.robotName}
-                onChange={(e) => set("robotName", e.target.value)}
-              />
-            </div>
-            <div className="col-span-2 flex flex-col gap-1.5">
-              <Label>Scouter Name</Label>
-              <Input
-                type="text"
-                placeholder="First and last name"
-                value={f.scouter}
-                onChange={(e) => set("scouter", e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Mechanical ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Mechanical</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle>Motors</CardTitle></CardHeader>
-        <CardContent>
-          <Input
-            placeholder="e.g. Kraken x60, Falcon 500..."
-            value={f.motors}
-            onChange={(e) => set("motors", e.target.value)}
-          />
-        </CardContent>
-      </Card>
-
-      <ChoiceGroup
-        label="Drivetrain Type"
-        options={[
-          { label: "Swerve", value: "swerve" },
-          { label: "Tank", value: "tank" },
-          { label: "Mecanum", value: "mecanum" },
-          { label: "Other", value: "other" },
-        ]}
-        cols={4}
-        value={f.drivetrainType}
-        onChange={(v) => set("drivetrainType", v)}
-      />
-
-      <ChoiceGroup
-        label="Fits Under Trench?"
-        hint="Can the robot drive under the trench without stopping?"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.fitsUnderTrench}
-        onChange={(v) => set("fitsUnderTrench", v)}
-      />
-
-      <ChoiceGroup
-        label="Can Cross the Bump?"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.crossesBump}
-        onChange={(v) => set("crossesBump", v)}
-      />
-
-      {/* ── Fuel Scoring ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Fuel Scoring</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <MultiChoiceGroup
-        label="Fuel Collection Method"
-        hint="Where does the robot primarily collect fuel? (select all)"
-        options={[
-          { label: "Depot", value: "depot" },
-          { label: "Floor pickup", value: "floor" },
-          { label: "Human player pass", value: "hp-pass" },
-        ]}
-        cols={3}
-        value={f.fuelCollection}
-        onChange={(v) => set("fuelCollection", v)}
-      />
-
-      <MultiChoiceGroup
-        label="Shooting Range"
-        hint="Where does the robot shoot from? (select all)"
-        options={[
-          { label: "Close range", value: "close" },
-          { label: "Mid range", value: "mid" },
-          { label: "Far range", value: "far" },
-        ]}
-        cols={3}
-        value={f.shootRange}
-        onChange={(v) => set("shootRange", v)}
-      />
-
-      <Counter
-        label="Estimated Cycles per Match"
-        hint="How many full collect → shoot cycles?"
-        value={f.cyclesEstimate}
-        onChange={(v) => set("cyclesEstimate", v)}
-      />
-
-      <ChoiceGroup
-        label="Shoots While Moving?"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.shootsWhileMoving}
-        onChange={(v) => set("shootsWhileMoving", v)}
-      />
-
-      {/* ── Hub Strategy ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Hub Strategy</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <MultiChoiceGroup
-        label="Inactive Hub Behavior"
-        hint="What did they do when their hub was turned off? (select all that apply)"
-        options={[
-          { label: "Defense", value: "defense" },
-          { label: "Collect fuel (yellow ball)", value: "collect" },
-          { label: "Cross bump/trench", value: "cross" },
-          { label: "Ferrying", value: "ferry" },
-          { label: "Waited / nothing", value: "wait" },
-        ]}
-        value={f.hubAdaptation}
-        onChange={(v) => set("hubAdaptation", v)}
-      />
-
-    {/*  <ChoiceGroup
-        label="Can it score in hub?"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.scoreOpponentHub}
-        onChange={(v) => set("scoreOpponentHub", v)}
-      />*
-      
-      /}
-
-      
-
-      {/* ── Auto ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Auto</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <MultiChoiceGroup
-        label="Auto Actions"
-        hint="What does the robot do in auto? (select all)"
-        options={[
-          { label: "Scores fuel", value: "fuel" },
-          { label: "Climbs L1", value: "climb" },
-          { label: "Crosses trench", value: "trench" },
-          { label: "Just moves", value: "move" },
-          { label: "Nothing", value: "nothing" },
-        ]}
-        value={f.autoActions}
-        onChange={(v) => set("autoActions", v)}
-      />
-
-      <ChoiceGroup
-        label="Auto Consistency"
-        options={[
-          { label: "Always", value: "always" },
-          { label: "Usually", value: "usually" },
-          { label: "Sometimes", value: "sometimes" },
-          { label: "Never", value: "never" },
-        ]}
-        cols={4}
-        value={f.autoConsistency}
-        onChange={(v) => set("autoConsistency", v)}
-      />
-
-      {/* ── Endgame ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">Endgame</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <ChoiceGroup
-        label="Max Climb Level"
-        options={[
-          { label: "No climb", value: "none" },
-          { label: "L1", value: "l1", sub: "10 pts" },
-          { label: "L2", value: "l2", sub: "20 pts" },
-          { label: "L3", value: "l3", sub: "30 pts" },
-        ]}
-        value={f.maxClimb}
-        onChange={(v) => set("maxClimb", v)}
-      />
-
-      {["l1", "l2", "l3"].includes(f.maxClimb) && (
-        <ChoiceGroup
-          label="Climb Consistency"
-          options={[
-            { label: "Always", value: "always" },
-            { label: "Usually", value: "usually" },
-            { label: "Sometimes", value: "sometimes" },
-            { label: "Never", value: "never" },
-          ]}
-          cols={4}
-          value={f.climbConsistency}
-          onChange={(v) => set("climbConsistency", v)}
-        />
-      )}
-
-      {/* ── General ── */}
-      <div className="flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-slate-300" />
-        <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">General</span>
-        <div className="h-px flex-1 bg-slate-300" />
-      </div>
-
-      <ChoiceGroup
-        label="Uses Vision / AprilTags?"
-        options={[
-          { label: "Yes", value: "yes" },
-          { label: "No", value: "no" },
-        ]}
-        value={f.usesVision}
-        onChange={(v) => set("usesVision", v)}
-      />
-
-      <Card>
-        <CardHeader><CardTitle>Estimated Points per Match</CardTitle></CardHeader>
-        <CardContent>
-          <Input
-            type="number"
-            placeholder="e.g. 80"
-            value={f.estimatedPoints}
-            onChange={(e) => set("estimatedPoints", e.target.value)}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Robot Photos</CardTitle></CardHeader>
-        <CardContent>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label>Take or Upload Photos</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                multiple
-                onChange={(e) => {
-                  handlePhotoChange(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <p className="text-xs text-slate-400">You can take or select multiple robot pictures.</p>
+            <div
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 cursor-pointer hover:bg-slate-100 transition-colors"
+              onClick={() => document.getElementById("photo-input")?.click()}
+            >
+              <svg className="h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+              </svg>
+              <span className="text-sm font-semibold text-slate-700">Browse Files</span>
+              <span className="text-xs text-slate-400">Drag and drop files here</span>
             </div>
+            <input
+              id="photo-input"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handlePhotoChange(e.target.files);
+                e.target.value = "";
+              }}
+            />
             {photoDrafts.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
                 {photoDrafts.map((photo, i) => (
                   <div key={photo.id} className="relative">
-                    <img src={photo.previewUrl} alt={`Robot preview ${i + 1}`} className="h-24 w-full rounded-lg border border-slate-200 object-cover" />
+                    <img
+                      src={photo.previewUrl}
+                      alt={`Preview ${i + 1}`}
+                      className="h-24 w-full rounded-lg border border-slate-200 object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => removePhotoDraft(photo.id)}
@@ -516,94 +174,62 @@ export default function PitPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Strengths</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Does your team have an instagram? Ours is rambots</CardTitle>
+        </CardHeader>
         <CardContent>
-          <Textarea
-            rows={3}
-            placeholder="What does this team do well?"
-            value={f.strengths}
-            onChange={(e) => set("strengths", e.target.value)}
+          <Input
+            type="text"
+            placeholder="@teamhandle"
+            value={f.instagram}
+            onChange={(e) => set("instagram", e.target.value)}
           />
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Weaknesses</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>What did you learn from this team that is applicable to you and our team?</CardTitle>
+        </CardHeader>
         <CardContent>
           <Textarea
-            rows={3}
-            placeholder="What does this team struggle with?"
-            value={f.weaknesses}
-            onChange={(e) => set("weaknesses", e.target.value)}
+            rows={6}
+            placeholder="Share what you learned..."
+            value={f.learned}
+            onChange={(e) => set("learned", e.target.value)}
           />
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Additional Notes</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Who filled this out? <span className="text-red-500">*</span></CardTitle></CardHeader>
         <CardContent>
-          <Textarea
-            rows={4}
-            placeholder="Anything relevant not covered above..."
-            value={f.notes}
-            onChange={(e) => set("notes", e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>First Name</Label>
+              <Input
+                type="text"
+                placeholder="First"
+                value={f.firstName}
+                onChange={(e) => set("firstName", e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Last Name</Label>
+              <Input
+                type="text"
+                placeholder="Last"
+                value={f.lastName}
+                onChange={(e) => set("lastName", e.target.value)}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       <Button size="lg" onClick={handleSubmit} disabled={saving} className="w-full rounded-xl shadow-md">
         {saving ? "Saving..." : "Submit Pit Entry"}
       </Button>
-
-      {entries.length > 0 && (
-        <>
-          <div className="flex items-center gap-3 py-1 mt-2">
-            <div className="h-px flex-1 bg-slate-300" />
-            <span className="text-sm font-extrabold uppercase tracking-widest text-slate-700">My Pit Entries ({entries.length})</span>
-            <div className="h-px flex-1 bg-slate-300" />
-          </div>
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-            <p className="text-xs text-slate-500">Need to reset? Tap to clear your local data.</p>
-            <button
-              onClick={() => {
-                if (!confirm("Clear all your local pit entries on this device?")) return;
-                localStorage.removeItem("frc-pit-2026");
-                window.dispatchEvent(new Event("scout-updated"));
-                setEntries([]);
-              }}
-              className="text-xs font-semibold text-red-500 hover:text-red-700"
-            >
-              Clear local data
-            </button>
-          </div>
-          <Input
-            placeholder="Search by team or robot name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <div className="flex flex-col gap-2">
-            {[...entries]
-              .sort((a, b) => Number(a.teamNumber) - Number(b.teamNumber))
-              .filter((e) => {
-                if (!search) return true;
-                const q = search.toLowerCase();
-                return e.teamNumber.includes(q) || e.robotName.toLowerCase().includes(q) || e.scouter.toLowerCase().includes(q);
-              })
-              .map((e) => (
-                <PitRow
-                  key={e.id}
-                  e={e}
-                  onDelete={() => {
-                    if (!confirm("Delete this entry?")) return;
-                    const next = entries.filter((x) => x.id !== e.id);
-                    setEntries(next);
-                    savePitEntries(next);
-                  }}
-                />
-              ))}
-          </div>
-        </>
-      )}
 
       <div className="pb-4" />
     </main>

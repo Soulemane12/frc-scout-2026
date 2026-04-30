@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "../lib/utils";
 
 const links = [
-  { href: "/match", label: "Match" },
+  { href: "/conference", label: "Conference" },
   { href: "/pit", label: "Pit" },
   { href: "/mentor", label: "Mentor" },
 ];
@@ -25,7 +25,7 @@ export default function Nav() {
 
         <nav className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
           {links
-            .filter((l) => !(l.href === "/mentor" && (pathname === "/match" || pathname === "/pit")))
+            .filter((l) => !(l.href === "/mentor" && (pathname === "/conference" || pathname === "/pit")))
             .map((l) => (
               <Link
                 key={l.href}
