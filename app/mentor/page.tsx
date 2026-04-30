@@ -17,22 +17,50 @@ function formatDate(ts: number) {
   });
 }
 
+function timeAgo(ts: number) {
+  const secs = Math.floor((Date.now() - ts) / 1000);
+  if (secs < 10) return "just now";
+  if (secs < 60) return `${secs}s ago`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  return `${Math.floor(secs / 3600)}h ago`;
+}
+
 export default function MentorPage() {
   const [tab, setTab] = useState<Tab>("conference");
   const [conferenceEntries, setConferenceEntries] = useState<ConferenceEntry[]>([]);
   const [pitEntries, setPitEntries] = useState<PitEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     const [conf, pit] = await Promise.all([fetchAllConferenceEntries(), fetchAllPitEntries()]);
     setConferenceEntries(conf);
     setPitEntries(pit);
-    setLoading(false);
+    setLastUpdated(Date.now());
+    if (!silent) setLoading(false);
+    else setRefreshing(false);
   }, []);
 
+  // Initial load
   useEffect(() => { load(); }, [load]);
+
+  // Refresh whenever the tab regains focus (new submissions from other devices)
+  useEffect(() => {
+    const onFocus = () => load(true);
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [load]);
+
+  // Tick "last updated" display every 10 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 10_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function handleDeleteConference(id: string) {
     if (!confirm("Delete this conference entry?")) return;
@@ -52,19 +80,36 @@ export default function MentorPage() {
     await deleteAllData();
     setConferenceEntries([]);
     setPitEntries([]);
+    setLastUpdated(Date.now());
     setDeleting(false);
   }
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">All Submissions</h1>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">All Submissions</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block" />
+              Live from database
+            </span>
+            {lastUpdated && (
+              <span className="text-xs text-slate-400">· Updated {timeAgo(lastUpdated)}</span>
+            )}
+          </div>
+        </div>
         <button
-          onClick={load}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+          onClick={() => load(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-all"
         >
-          Refresh
+          <svg className={cn("h-3 w-3", refreshing && "animate-spin")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
@@ -79,27 +124,37 @@ export default function MentorPage() {
               tab === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
             )}
           >
-            {t === "conference" ? `Conference (${conferenceEntries.length})` : `Pit (${pitEntries.length})`}
+            {t === "conference"
+              ? `Conference (${conferenceEntries.length})`
+              : `Pit (${pitEntries.length})`}
           </button>
         ))}
       </div>
 
+      {/* Loading */}
       {loading && (
-        <p className="text-sm text-slate-400">Loading...</p>
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 rounded-xl border border-slate-100 bg-slate-50 animate-pulse" />
+          ))}
+        </div>
       )}
 
       {/* Conference tab */}
       {!loading && tab === "conference" && (
         <div className="flex flex-col gap-3">
           {conferenceEntries.length === 0 && (
-            <p className="text-sm text-slate-400">No conference submissions yet.</p>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-6 py-10 text-center">
+              <p className="text-sm font-medium text-slate-400">No conference submissions yet.</p>
+              <p className="text-xs text-slate-300 mt-1">Submissions will appear here as people fill out the form.</p>
+            </div>
           )}
           {conferenceEntries.map((e) => (
             <Card key={e.id}>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <CardTitle>{e.firstName} {e.lastName}</CardTitle>
-                  <span className="text-xs text-slate-400">{formatDate(e.timestamp)}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{formatDate(e.timestamp)}</span>
                 </div>
                 {e.conferenceName && (
                   <p className="text-xs font-semibold text-blue-600 mt-0.5">{e.conferenceName}</p>
@@ -107,7 +162,7 @@ export default function MentorPage() {
               </CardHeader>
               {e.learned && (
                 <CardContent>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{e.learned}</p>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{e.learned}</p>
                 </CardContent>
               )}
               <div className="flex justify-end px-6 pb-4">
@@ -124,37 +179,41 @@ export default function MentorPage() {
       {!loading && tab === "pit" && (
         <div className="flex flex-col gap-3">
           {pitEntries.length === 0 && (
-            <p className="text-sm text-slate-400">No pit submissions yet.</p>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-6 py-10 text-center">
+              <p className="text-sm font-medium text-slate-400">No pit submissions yet.</p>
+              <p className="text-xs text-slate-300 mt-1">Submissions will appear here as people fill out the form.</p>
+            </div>
           )}
           {pitEntries.map((e) => (
             <Card key={e.id}>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <CardTitle>{e.firstName} {e.lastName}</CardTitle>
-                  <span className="text-xs text-slate-400">{formatDate(e.timestamp)}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{formatDate(e.timestamp)}</span>
                 </div>
                 {e.teamNameAndNumber && (
                   <p className="text-xs font-semibold text-blue-600 mt-0.5">{e.teamNameAndNumber}</p>
                 )}
                 {e.instagram && (
-                  <p className="text-xs text-slate-500 mt-0.5">Instagram: {e.instagram}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">@{e.instagram.replace(/^@/, "")}</p>
                 )}
               </CardHeader>
               <CardContent>
                 {e.photoUrls.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {e.photoUrls.map((url, i) => (
-                      <img
-                        key={`${e.id}-photo-${i}`}
-                        src={url}
-                        alt={`${e.teamNameAndNumber} photo ${i + 1}`}
-                        className="h-24 w-full rounded-lg border border-slate-200 object-cover"
-                      />
+                      <a key={`${e.id}-photo-${i}`} href={url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={url}
+                          alt={`${e.teamNameAndNumber} photo ${i + 1}`}
+                          className="h-24 w-full rounded-lg border border-slate-200 object-cover hover:opacity-90 transition-opacity"
+                        />
+                      </a>
                     ))}
                   </div>
                 )}
                 {e.learned && (
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{e.learned}</p>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{e.learned}</p>
                 )}
               </CardContent>
               <div className="flex justify-end px-6 pb-4">
@@ -172,7 +231,7 @@ export default function MentorPage() {
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-5 py-4">
           <p className="text-sm text-red-700 font-medium mb-3">Danger Zone</p>
           <Button variant="destructive" onClick={handleDeleteAll} disabled={deleting} className="w-full">
-            {deleting ? "Deleting..." : "Delete All Data"}
+            {deleting ? "Deleting…" : "Delete All Data"}
           </Button>
         </div>
       )}
