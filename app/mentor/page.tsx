@@ -145,9 +145,11 @@ export default function MentorPage() {
                   <CardTitle>{e.firstName} {e.lastName}</CardTitle>
                   <span className="shrink-0 text-xs text-slate-400">{formatDate(e.timestamp)}</span>
                 </div>
-                {e.conferenceName && (
-                  <p className="text-xs font-semibold text-blue-600 mt-0.5">{e.conferenceName}</p>
-                )}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {e.division && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{e.division}</span>}
+                  {e.teamNumber && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">#{e.teamNumber}{e.teamName ? ` · ${e.teamName}` : ""}</span>}
+                  {e.conferenceName && <span className="text-xs text-slate-500">{e.conferenceName}</span>}
+                </div>
               </CardHeader>
               {e.learned && (
                 <CardContent>
@@ -180,9 +182,10 @@ export default function MentorPage() {
                   <CardTitle>{e.firstName} {e.lastName}</CardTitle>
                   <span className="shrink-0 text-xs text-slate-400">{formatDate(e.timestamp)}</span>
                 </div>
-                {e.teamNameAndNumber && (
-                  <p className="text-xs font-semibold text-blue-600 mt-0.5">{e.teamNameAndNumber}</p>
-                )}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {e.division && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{e.division}</span>}
+                  {e.teamNumber && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">#{e.teamNumber}{e.teamName ? ` · ${e.teamName}` : ""}</span>}
+                </div>
                 {e.instagram && (
                   <p className="text-xs text-slate-500 mt-0.5">@{e.instagram.replace(/^@/, "")}</p>
                 )}
@@ -194,7 +197,7 @@ export default function MentorPage() {
                       <a key={`${e.id}-photo-${i}`} href={url} target="_blank" rel="noopener noreferrer">
                         <img
                           src={url}
-                          alt={`${e.teamNameAndNumber} photo ${i + 1}`}
+                          alt={`${e.teamNumber} ${e.teamName} photo ${i + 1}`}
                           className="h-24 w-full rounded-lg border border-slate-200 object-cover hover:opacity-90 transition-opacity"
                         />
                       </a>

@@ -54,6 +54,9 @@ function conferenceEntryToRow(e: ConferenceEntry) {
     timestamp:       e.timestamp,
     first_name:      e.firstName,
     last_name:       e.lastName,
+    division:        e.division,
+    team_number:     e.teamNumber,
+    team_name:       e.teamName,
     conference_name: e.conferenceName,
     learned:         e.learned,
   };
@@ -65,6 +68,9 @@ function rowToConferenceEntry(row: Record<string, unknown>): ConferenceEntry {
     timestamp:      row.timestamp as number,
     firstName:      (row.first_name as string) ?? "",
     lastName:       (row.last_name as string) ?? "",
+    division:       (row.division as string) ?? "",
+    teamNumber:     (row.team_number as string) ?? "",
+    teamName:       (row.team_name as string) ?? "",
     conferenceName: (row.conference_name as string) ?? "",
     learned:        (row.learned as string) ?? "",
   };
@@ -72,27 +78,31 @@ function rowToConferenceEntry(row: Record<string, unknown>): ConferenceEntry {
 
 function pitEntryToRow(e: PitEntry) {
   return {
-    id:                   e.id,
-    timestamp:            e.timestamp,
-    first_name:           e.firstName,
-    last_name:            e.lastName,
-    team_name_and_number: e.teamNameAndNumber,
-    photo_urls:           stringArray(e.photoUrls),
-    instagram:            e.instagram,
-    learned:              e.learned,
+    id:          e.id,
+    timestamp:   e.timestamp,
+    first_name:  e.firstName,
+    last_name:   e.lastName,
+    division:    e.division,
+    team_number: e.teamNumber,
+    team_name:   e.teamName,
+    photo_urls:  stringArray(e.photoUrls),
+    instagram:   e.instagram,
+    learned:     e.learned,
   };
 }
 
 function rowToPitEntry(row: Record<string, unknown>): PitEntry {
   return {
-    id:                row.id as string,
-    timestamp:         row.timestamp as number,
-    firstName:         (row.first_name as string) ?? "",
-    lastName:          (row.last_name as string) ?? "",
-    teamNameAndNumber: (row.team_name_and_number as string) ?? "",
-    photoUrls:         stringArray(row.photo_urls),
-    instagram:         (row.instagram as string) ?? "",
-    learned:           (row.learned as string) ?? "",
+    id:         row.id as string,
+    timestamp:  row.timestamp as number,
+    firstName:  (row.first_name as string) ?? "",
+    lastName:   (row.last_name as string) ?? "",
+    division:   (row.division as string) ?? "",
+    teamNumber: (row.team_number as string) ?? "",
+    teamName:   (row.team_name as string) ?? "",
+    photoUrls:  stringArray(row.photo_urls),
+    instagram:  (row.instagram as string) ?? "",
+    learned:    (row.learned as string) ?? "",
   };
 }
 

@@ -10,6 +10,9 @@ import { loadConferenceEntries, saveConferenceEntries } from "../lib/storage";
 const BLANK = {
   firstName: "",
   lastName: "",
+  division: "",
+  teamNumber: "",
+  teamName: "",
   conferenceName: "",
   learned: "",
 };
@@ -53,6 +56,43 @@ export default function ConferencePage() {
           What did you learn? Think about off season projects. Think about goals. I will show all your submissions to Nicotri when we come back.
         </p>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle>Team Info</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Division</Label>
+              <Input
+                type="text"
+                placeholder="e.g. North, Einstein, Archimedes..."
+                value={f.division}
+                onChange={(e) => set("division", e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Team Number</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. 4571"
+                  value={f.teamNumber}
+                  onChange={(e) => set("teamNumber", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Team Name</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Titan"
+                  value={f.teamName}
+                  onChange={(e) => set("teamName", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle>Conference Name</CardTitle></CardHeader>

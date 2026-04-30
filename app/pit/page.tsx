@@ -20,7 +20,9 @@ type PhotoDraft = {
 const BLANK = {
   firstName: "",
   lastName: "",
-  teamNameAndNumber: "",
+  division: "",
+  teamNumber: "",
+  teamName: "",
   instagram: "",
   learned: "",
 };
@@ -39,7 +41,7 @@ export default function PitPage() {
     const uploads = await Promise.all(
       photoDrafts.map(async ({ file }, i) => {
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const teamSlug = f.teamNameAndNumber.replace(/\s+/g, "-").toLowerCase() || "unknown-team";
+        const teamSlug = (f.teamNumber || "unknown").replace(/\s+/g, "-").toLowerCase();
         const path = `${teamSlug}/${entryId}/${i + 1}-${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from(ROBOT_PHOTOS_BUCKET).upload(path, file, {
           cacheControl: "31536000",
@@ -110,14 +112,39 @@ export default function PitPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Team Name and Number</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Team Info</CardTitle></CardHeader>
         <CardContent>
-          <Input
-            type="text"
-            placeholder="e.g. 4571 Titan"
-            value={f.teamNameAndNumber}
-            onChange={(e) => set("teamNameAndNumber", e.target.value)}
-          />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Division</Label>
+              <Input
+                type="text"
+                placeholder="e.g. North, Einstein, Archimedes..."
+                value={f.division}
+                onChange={(e) => set("division", e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Team Number</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. 4571"
+                  value={f.teamNumber}
+                  onChange={(e) => set("teamNumber", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Team Name</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Titan"
+                  value={f.teamName}
+                  onChange={(e) => set("teamName", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

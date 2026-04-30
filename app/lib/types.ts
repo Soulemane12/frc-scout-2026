@@ -3,6 +3,9 @@ export interface ConferenceEntry {
   timestamp: number;
   firstName: string;
   lastName: string;
+  division: string;
+  teamNumber: string;
+  teamName: string;
   conferenceName: string;
   learned: string;
 }
@@ -12,7 +15,9 @@ export interface PitEntry {
   timestamp: number;
   firstName: string;
   lastName: string;
-  teamNameAndNumber: string;
+  division: string;
+  teamNumber: string;
+  teamName: string;
   photoUrls: string[];
   instagram: string;
   learned: string;
