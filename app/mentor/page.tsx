@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   fetchAllConferenceEntries, fetchAllPitEntries,
-  deleteConferenceEntries, deletePitEntries, deleteAllData,
+  deleteConferenceEntries, deletePitEntries,
 } from "../lib/storage";
 import type { ConferenceEntry, PitEntry } from "../lib/types";
 import { Card, CardHeader, CardTitle, CardContent, Button } from "../components/ui";
@@ -32,7 +32,6 @@ export default function MentorPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -72,16 +71,6 @@ export default function MentorPage() {
     if (!confirm("Delete this pit entry?")) return;
     await deletePitEntries([id]);
     setPitEntries((prev) => prev.filter((e) => e.id !== id));
-  }
-
-  async function handleDeleteAll() {
-    if (!confirm("Delete ALL data (conference + pit entries + photos)? This cannot be undone.")) return;
-    setDeleting(true);
-    await deleteAllData();
-    setConferenceEntries([]);
-    setPitEntries([]);
-    setLastUpdated(Date.now());
-    setDeleting(false);
   }
 
   return (
@@ -223,16 +212,6 @@ export default function MentorPage() {
               </div>
             </Card>
           ))}
-        </div>
-      )}
-
-      {/* Delete all */}
-      {!loading && (conferenceEntries.length > 0 || pitEntries.length > 0) && (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-5 py-4">
-          <p className="text-sm text-red-700 font-medium mb-3">Danger Zone</p>
-          <Button variant="destructive" onClick={handleDeleteAll} disabled={deleting} className="w-full">
-            {deleting ? "Deleting…" : "Delete All Data"}
-          </Button>
         </div>
       )}
 
